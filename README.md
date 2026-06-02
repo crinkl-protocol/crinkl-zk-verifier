@@ -14,6 +14,7 @@ What this package does now:
 - checks spend-token head and token-hash binding when a spend token is supplied
 - rejects unknown circuits and verifier keys fail-closed
 - rejects replayed `(scopeId, nullifier)` pairs when a replay store is supplied
+- runs the full 18-case pre-production verifier gate from `crinkl-protocol-spec`
 
 What this package does not do yet:
 
@@ -50,5 +51,26 @@ verification succeeds.
 ## Test
 
 ```bash
-npm test
+npm run test:preproduction
 ```
+
+The pre-production gate covers:
+
+- valid proof artifact and registry entry
+- unknown `proofSystem`
+- unknown `circuitId`
+- unknown or mismatched `verifyingKeyId`
+- missing `publicInputs`
+- missing proof bytes
+- changed `spendIdHash`
+- changed `headEventHash`
+- changed `spendTokenHash`
+- changed `statementId`
+- changed `scopeId`
+- changed `nullifier`
+- changed `expectedStoreHash`
+- changed `minDayIndex`
+- changed `thresholdCents`
+- changed commitment public input
+- changed proof bytes
+- replayed nullifier in the same scope
