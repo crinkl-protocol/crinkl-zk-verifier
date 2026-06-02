@@ -14,17 +14,45 @@ What this package does now:
 - checks spend-token head and token-hash binding when a spend token is supplied
 - rejects unknown circuits and verifier keys fail-closed
 - rejects replayed `(scopeId, nullifier)` pairs when a replay store is supplied
+- verifies real Halo2 proof bytes through the Rust CLI backend when configured
 - runs the full 18-case pre-production verifier gate from `crinkl-protocol-spec`
 
 What this package does not do yet:
 
-- it does not bundle the Halo2 cryptographic verifier
 - it does not prove CBSA inside ZK
 - it does not prove store-set membership for `H2_PROMO_OPEN_MIN_V1`
 - it does not replace `crinkl-protocol-spec` as the public spec authority
 
-The cryptographic backend must be injected. If no backend is supplied, proof
-verification fails closed with `unsupported_cryptographic_backend`.
+The cryptographic backend must be injected. If no backend is supplied, proof verification fails closed with `unsupported_cryptographic_backend`.
+
+## Halo2 CLI backend
+
+The current real backend calls the existing Rust verifier CLI. It does not trust
+the Crinkl gateway or proof service.
+
+```js
+import { createHalo2CliBackend, verifySpendZkProof } from "@crnkl/zk-verifier";
+
+const backend = createHalo2CliBackend({
+  cargoManifestPath: "/path/to/crinkl-platform/scripts/zk-demo-rs/Cargo.toml"
+});
+
+const result = await verifySpendZkProof({
+  spendToken,
+  proof,
+  manifest,
+  hashStatement,
+  backend
+});
+```
+
+For a built binary instead of Cargo:
+
+```js
+const backend = createHalo2CliBackend({
+  command: "/path/to/crnkl-zk-demo"
+});
+```
 
 ## Usage
 
@@ -52,6 +80,12 @@ verification succeeds.
 
 ```bash
 npm run test:preproduction
+```
+
+Real Halo2 CLI backend test:
+
+```bash
+CRNKL_ZK_DEMO_MANIFEST_PATH=/path/to/crinkl-platform/scripts/zk-demo-rs/Cargo.toml npm run test:halo2
 ```
 
 The pre-production gate covers:

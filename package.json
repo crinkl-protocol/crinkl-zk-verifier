@@ -13,8 +13,9 @@
     }
   },
   "scripts": {
-    "test": "node --test",
-    "test:preproduction": "node --test"
+    "test": "npm run test:preproduction",
+    "test:preproduction": "node --test test/index.test.mjs",
+    "test:halo2": "node --test test/halo2-cli-backend.test.mjs"
   },
   "engines": {
     "node": ">=20"

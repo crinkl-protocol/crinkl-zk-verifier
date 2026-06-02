@@ -33,6 +33,12 @@ export interface VerifierRegistryEntryV1 {
   circuitId: string;
   verifyingKeyId: string;
   publicInputOrder: string[];
+  defaultK?: number;
+  verifierParams?: {
+    k?: number;
+    defaultK?: number;
+    [key: string]: unknown;
+  };
   verifierKeyIdProfile?: string;
   artifactHash?: string;
   sourceCommit?: string;
@@ -69,3 +75,13 @@ export interface VerifySpendZkProofInput {
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER: readonly string[];
 
 export function verifySpendZkProof(input: VerifySpendZkProofInput): Promise<VerificationResult>;
+
+export interface Halo2CliBackendOptions {
+  command?: string;
+  argsPrefix?: string[];
+  cargoManifestPath?: string;
+  cwd?: string;
+  k?: number;
+}
+
+export function createHalo2CliBackend(options?: Halo2CliBackendOptions): VerificationBackend;

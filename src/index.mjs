@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
+
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER = Object.freeze([
   "spendIdHash",
   "headEventHash",
