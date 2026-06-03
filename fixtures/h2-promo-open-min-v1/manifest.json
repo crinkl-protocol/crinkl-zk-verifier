@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "1.0.0-rc.2",
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "protocolVersion": "1.0.0-rc.2",
+      "proofSystem": "HALO2_IPA",
+      "circuitId": "H2_PROMO_OPEN_MIN_V1",
+      "verifyingKeyId": "sha256:fe210bf4e5a3901c6fcb39a3b1e131dc67bc9006d3ef686d591264d4b773f228",
+      "publicInputOrder": [
+        "spendIdHash",
+        "headEventHash",
+        "spendTokenHash",
+        "statementId",
+        "scopeId",
+        "nullifier",
+        "expectedStoreHash",
+        "minDayIndex",
+        "thresholdCents",
+        "commitmentStore",
+        "commitmentDayIndex",
+        "commitmentTotal"
+      ],
+      "verifierKeyIdProfile": "halo2_pinned_debug_v1",
+      "artifactHash": "sha256:581d7c6f500093d8451f4cc1014bcc08b41ea77ab63fa35560cd167bd03e1ea1",
+      "sourceCommit": "f4636c7148a0b2f993b2064e690c6bc60d609c7e",
+      "validFromProtocolVersion": "1.0.0-rc.2",
+      "auditStatus": "INTERNAL_REVIEW",
+      "verifierParams": {
+        "k": 14,
+        "defaultK": 14,
+        "curveFamily": "pasta",
+        "transcript": "halo2_ipa",
+        "hashFunctions": [
+          "sha256",
+          "poseidon"
+        ],
+        "commitmentEncoding": "zk_demo_rs_promo_open_min_v1",
+        "publicInputOrder": [
+          "spendIdHash",
+          "headEventHash",
+          "spendTokenHash",
+          "statementId",
+          "scopeId",
+          "nullifier",
+          "expectedStoreHash",
+          "minDayIndex",
+          "thresholdCents",
+          "commitmentStore",
+          "commitmentDayIndex",
+          "commitmentTotal"
+        ]
+      },
+      "status": "beta_public"
+    }
+  ]
+}

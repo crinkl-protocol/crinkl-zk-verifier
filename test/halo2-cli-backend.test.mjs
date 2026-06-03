@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 import {
@@ -10,10 +11,27 @@ import {
 } from "../src/index.mjs";
 
 const cargoManifestPath = process.env.CRNKL_ZK_DEMO_MANIFEST_PATH;
+const fixtureDir = new URL("../fixtures/h2-promo-open-min-v1/", import.meta.url);
 let realFixturePromise;
 
 test("real Halo2 CLI backend verifies a generated open-min proof", async (t) => {
   const fixture = await getRealHalo2Fixture(t);
+  const result = await verifySpendZkProof({
+    ...fixture,
+    backend: createHalo2CliBackend({ cargoManifestPath })
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, "ok");
+});
+
+test("real Halo2 CLI backend verifies the published open-min fixture", async (t) => {
+  if (!cargoManifestPath) {
+    t.skip("set CRNKL_ZK_DEMO_MANIFEST_PATH to run the real Halo2 backend test");
+    return;
+  }
+
+  const fixture = await loadPublishedFixture();
   const result = await verifySpendZkProof({
     ...fixture,
     backend: createHalo2CliBackend({ cargoManifestPath })
@@ -48,6 +66,25 @@ test("real Halo2 CLI backend rejects changed proof bytes", async (t) => {
   assert.equal(result.ok, false);
   assert.equal(result.reason, "cryptographic_verification_failed");
 });
+
+async function loadPublishedFixture() {
+  const [proof, spendToken, manifest] = await Promise.all([
+    readJson("valid-proof.json"),
+    readJson("spend-token.json"),
+    readJson("manifest.json")
+  ]);
+
+  return {
+    proof,
+    spendToken,
+    manifest,
+    hashStatement: (candidate) => hash(canonicalJson(candidate))
+  };
+}
+
+async function readJson(fileName) {
+  return JSON.parse(await readFile(new URL(fileName, fixtureDir), "utf8"));
+}
 
 async function getRealHalo2Fixture(t) {
   if (!cargoManifestPath) {
@@ -227,4 +264,19 @@ function rawHash(value) {
 
 function poseidon(value) {
   return `poseidon:${rawHash(value)}`;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }

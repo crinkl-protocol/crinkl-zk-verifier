@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "protocol": {
+    "protocolVersion": "1.0.0-rc.2"
+  },
+  "lineage": {
+    "headEventHash": "sha256:2762fce1f193029d65324eea381c12f0483638399fd303733fdb1c891db91fef"
+  },
+  "signatures": {
+    "tokenHash": "sha256:e55e7cb1a8095f3b068909572a2e5c2a00a65c67341b52124e12dda168b325e8"
+  }
+}

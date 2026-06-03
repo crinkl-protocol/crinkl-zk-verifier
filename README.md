@@ -16,6 +16,7 @@ What this package does now:
 - rejects replayed `(scopeId, nullifier)` pairs when a replay store is supplied
 - verifies real Halo2 proof bytes through the Rust CLI backend when configured
 - runs the full 18-case pre-production verifier gate from `crinkl-protocol-spec`
+- ships reproducible `H2_PROMO_OPEN_MIN_V1` verifier fixture artifacts with a registry manifest and artifact hashes
 
 What this package does not do yet:
 
@@ -75,6 +76,25 @@ if (!result.ok) {
 `backend.verify()` receives the proof artifact, matched registry entry, and
 public input order. It must return `{ ok: true }` only after cryptographic proof
 verification succeeds.
+
+## Fixture artifacts
+
+The public beta fixture set lives in `fixtures/h2-promo-open-min-v1/`:
+
+- `valid-proof.json`
+- `spend-token.json`
+- `manifest.json`
+- `fixture-metadata.json`
+
+The manifest includes `artifactHash`, `sourceCommit`, `verifierParams`, and the
+frozen public input order. `fixture-metadata.json` records the generator, source
+commit, verifier artifact profile, artifact hash, and SHA-256 file hashes.
+
+Regenerate the fixture set from the platform Rust Halo2 CLI:
+
+```bash
+CRNKL_ZK_DEMO_MANIFEST_PATH=/path/to/crinkl-platform/scripts/zk-demo-rs/Cargo.toml npm run generate:fixtures
+```
 
 ## Test
 

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-02T00:00:00.000Z",
+  "generator": "scripts/generate-h2-promo-open-min-fixture.mjs",
+  "protocolVersion": "1.0.0-rc.2",
+  "proofSystem": "HALO2_IPA",
+  "circuitId": "H2_PROMO_OPEN_MIN_V1",
+  "sourceCommit": "f4636c7148a0b2f993b2064e690c6bc60d609c7e",
+  "artifactHash": "sha256:581d7c6f500093d8451f4cc1014bcc08b41ea77ab63fa35560cd167bd03e1ea1",
+  "verifierArtifactProfile": {
+    "domain": "crinkl:verifier-artifact-profile:v1",
+    "schemaVersion": 1,
+    "protocolVersion": "1.0.0-rc.2",
+    "proofSystem": "HALO2_IPA",
+    "circuitId": "H2_PROMO_OPEN_MIN_V1",
+    "verifyingKeyId": "sha256:fe210bf4e5a3901c6fcb39a3b1e131dc67bc9006d3ef686d591264d4b773f228",
+    "verifierKeyIdProfile": "halo2_pinned_debug_v1",
+    "sourceCommit": "f4636c7148a0b2f993b2064e690c6bc60d609c7e",
+    "verifierParams": {
+      "k": 14,
+      "defaultK": 14,
+      "curveFamily": "pasta",
+      "transcript": "halo2_ipa",
+      "hashFunctions": [
+        "sha256",
+        "poseidon"
+      ],
+      "commitmentEncoding": "zk_demo_rs_promo_open_min_v1",
+      "publicInputOrder": [
+        "spendIdHash",
+        "headEventHash",
+        "spendTokenHash",
+        "statementId",
+        "scopeId",
+        "nullifier",
+        "expectedStoreHash",
+        "minDayIndex",
+        "thresholdCents",
+        "commitmentStore",
+        "commitmentDayIndex",
+        "commitmentTotal"
+      ]
+    },
+    "publicInputOrder": [
+      "spendIdHash",
+      "headEventHash",
+      "spendTokenHash",
+      "statementId",
+      "scopeId",
+      "nullifier",
+      "expectedStoreHash",
+      "minDayIndex",
+      "thresholdCents",
+      "commitmentStore",
+      "commitmentDayIndex",
+      "commitmentTotal"
+    ]
+  },
+  "statementHashAlgorithm": "sha256(canonical-json-with-sorted-object-keys)",
+  "fileHashes": {
+    "valid-proof.json": "sha256:4bfefc423c729e64c91edf9b7a65af93d6c5bda323b7c0f5dfe26a9cfcfea96a",
+    "spend-token.json": "sha256:b0e574c64f4568eed58908e58fdd3f7f68b4267a5982d493d3402aba248bf741",
+    "manifest.json": "sha256:649624e30379061542bb61e696b5fee1556bcc94e4efd0198f44af7d97fabff5"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "1.0.0-rc.2",
+  "spendId": "spend-public-beta-h2-open-min-valid-001",
+  "spendTokenHash": "sha256:e55e7cb1a8095f3b068909572a2e5c2a00a65c67341b52124e12dda168b325e8",
+  "binding": {
+    "headEventHash": "sha256:2762fce1f193029d65324eea381c12f0483638399fd303733fdb1c891db91fef"
+  },
+  "statement": {
+    "domain": "crinkl:statement:v1",
+    "schemaVersion": 1,
+    "type": "SPEND_STOREHASH_EQ_AND_DAYINDEX_GTE_AND_TOTAL_GTE",
+    "protocolVersion": "1.0.0-rc.2",
+    "expectedStoreHash": "sha256:9a2de5a2706ac13d4c93d4f897b3616816090bd111fcedd378fbc5d62818be43",
+    "minDayIndex": 20000,
+    "thresholdCents": 1000,
+    "currency": "USD"
+  },
+  "statementId": "sha256:e3aff4fe91fbb05c94db62e0f84a5e8cf84c122cf66dea0ab7b1fff442649e45",
+  "scopeId": "sha256:1cc58700b93717d49dc30a8dae6973ad5e9d59b34ffc599a0b19aba34e424c80",
+  "nullifier": "sha256:aada6a4982bcb03fa48ed86e117ed0c654d9b3b6e29ebb64cf6a5b6868c093bd",
+  "proofSystem": "HALO2_IPA",
+  "circuitId": "H2_PROMO_OPEN_MIN_V1",
+  "verifyingKeyId": "sha256:fe210bf4e5a3901c6fcb39a3b1e131dc67bc9006d3ef686d591264d4b773f228",
+  "publicInputs": {
+    "spendIdHash": "sha256:35e05fc641436c8f7376cf47b3c85e1990810ed8ad1f66da218b6906f4ea70d7",
+    "headEventHash": "sha256:2762fce1f193029d65324eea381c12f0483638399fd303733fdb1c891db91fef",
+    "spendTokenHash": "sha256:e55e7cb1a8095f3b068909572a2e5c2a00a65c67341b52124e12dda168b325e8",
+    "statementId": "sha256:e3aff4fe91fbb05c94db62e0f84a5e8cf84c122cf66dea0ab7b1fff442649e45",
+    "scopeId": "sha256:1cc58700b93717d49dc30a8dae6973ad5e9d59b34ffc599a0b19aba34e424c80",
+    "nullifier": "sha256:aada6a4982bcb03fa48ed86e117ed0c654d9b3b6e29ebb64cf6a5b6868c093bd",
+    "expectedStoreHash": "sha256:9a2de5a2706ac13d4c93d4f897b3616816090bd111fcedd378fbc5d62818be43",
+    "minDayIndex": 20000,
+    "thresholdCents": 1000,
+    "commitmentStore": "poseidon:1a1739a9e31eee5fa6deec76df130ec2d8501abc5b37392c9232e072a0f2497d",
+    "commitmentDayIndex": "poseidon:042d35d7120f1e49e1584b6d3b871d1a5d3b22d5a1a35a1cdbf940c8b9e264b1",
+    "commitmentTotal": "poseidon:208de9ecd79d4fa7f2a1aaaa58ea75249984f1cde58fc2c8a3149e6a3c59e9b1"
+  },
+  "proof": "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",
+  "issuedBy": "crinkl-proof-service-alpha-fixture",
+  "createdAt": "2026-06-02T00:00:00.000Z",
+  "k": 14
+}
