@@ -16,9 +16,14 @@
     "test": "npm run test:preproduction",
     "test:preproduction": "node --test test/index.test.mjs test/fixtures.test.mjs",
     "test:halo2": "node --test test/halo2-cli-backend.test.mjs",
-    "generate:fixtures": "node scripts/generate-h2-promo-open-min-fixture.mjs"
+    "generate:fixtures": "node scripts/generate-h2-promo-open-min-fixture.mjs",
+    "verify:release-binary": "node scripts/verify-release-binary.mjs",
+    "test:release-binary": "node --test test/release-binary.test.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "bin": {
+    "crnkl-zk-demo-linux-x64": "./bin/crnkl-zk-demo-linux-x64"
   }
 }

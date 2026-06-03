@@ -1,12 +1,15 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const DEFAULT_K = 14;
 
 export function createHalo2CliBackend(options = {}) {
   const cargoManifestPath = options.cargoManifestPath ?? process.env.CRNKL_ZK_DEMO_MANIFEST_PATH;
   const envBinary = process.env.CRNKL_ZK_DEMO_BIN;
+  const packagedBinary = resolvePackagedBinary();
   const usesCargoManifest = !options.command && !envBinary && Boolean(cargoManifestPath);
-  const command = options.command ?? envBinary ?? (usesCargoManifest ? "cargo" : "crnkl-zk-demo");
+  const command = options.command ?? envBinary ?? (usesCargoManifest ? "cargo" : packagedBinary ?? "crnkl-zk-demo");
   const argsPrefix =
     options.argsPrefix ??
     (usesCargoManifest ? ["run", "--quiet", "--manifest-path", cargoManifestPath, "--"] : []);
@@ -60,6 +63,16 @@ export function createHalo2CliBackend(options = {}) {
       return { ok: true };
     }
   };
+}
+
+
+function resolvePackagedBinary() {
+  if (process.platform !== "linux" || process.arch !== "x64") {
+    return null;
+  }
+
+  const binaryPath = fileURLToPath(new URL("../bin/crnkl-zk-demo-linux-x64", import.meta.url));
+  return existsSync(binaryPath) ? binaryPath : null;
 }
 
 function resolveK({ options, proof, registryEntry }) {

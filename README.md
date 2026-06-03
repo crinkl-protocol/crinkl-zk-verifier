@@ -3,7 +3,7 @@
 `@crnkl/zk-verifier` is the public package surface for independently checking
 Crinkl ZK spend proof artifacts.
 
-Current status: alpha scaffold.
+Current status: alpha package with Linux x64 release-binary backend.
 
 What this package does now:
 
@@ -28,8 +28,10 @@ The cryptographic backend must be injected. If no backend is supplied, proof ver
 
 ## Halo2 CLI backend
 
-The current real backend calls the existing Rust verifier CLI. It does not trust
-the Crinkl gateway or proof service.
+The current real backend calls the Rust verifier CLI. It does not trust
+the Crinkl gateway or proof service. On Linux x64, the package uses the bundled
+`bin/crnkl-zk-demo-linux-x64` release binary by default when no explicit command
+or Cargo manifest is supplied.
 
 ```js
 import { createHalo2CliBackend, verifySpendZkProof } from "@crnkl/zk-verifier";
@@ -53,6 +55,21 @@ For a built binary instead of Cargo:
 const backend = createHalo2CliBackend({
   command: "/path/to/crnkl-zk-demo"
 });
+```
+
+## Release binary backend
+
+The package includes a Linux x64 release binary at `bin/crnkl-zk-demo-linux-x64`.
+The pinned checksum is in `bin/checksums.sha256`. Verify it with:
+
+```bash
+npm run verify:release-binary
+```
+
+Test the bundled binary against the published fixture with:
+
+```bash
+npm run test:release-binary
 ```
 
 ## Usage
