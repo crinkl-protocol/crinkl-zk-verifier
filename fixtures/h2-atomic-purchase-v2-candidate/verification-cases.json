@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "validCase": {
+    "id": "VALID_REAL_PROOF",
+    "expected": "ACCEPT"
+  },
+  "rejectCases": [
+    {
+      "id": "PROOF_BYTES_CHANGED",
+      "mutation": "proof.proof",
+      "expected": "REJECT"
+    },
+    {
+      "id": "BOUND_MINIMUM_AMOUNT_CHANGED",
+      "mutation": "proof.statement.minimumAmountCents + proof.statementId + proof.publicInputs.statementId + proof.publicInputs.minimumAmountCents",
+      "expected": "REJECT"
+    },
+    {
+      "id": "BOUND_STORE_SET_ROOT_CHANGED",
+      "mutation": "proof.statement.storeSetRoot + proof.statementId + proof.publicInputs.statementId + proof.publicInputs.storeSetRoot",
+      "expected": "REJECT"
+    },
+    {
+      "id": "BOUND_CURRENCY_COMMITMENT_CHANGED",
+      "mutation": "proof.publicInputs.commitmentCurrency + spendToken.zk.commitments.C_currency",
+      "expected": "REJECT"
+    }
+  ]
+}

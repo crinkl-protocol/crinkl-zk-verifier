@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "1.0.0-rc.2",
+  "entries": [
+    {
+      "schemaVersion": 1,
+      "protocolVersion": "1.0.0-rc.2",
+      "proofSystem": "HALO2_IPA",
+      "profileId": "CAMPAIGN_QUALIFICATION_ATOMIC_PURCHASE_PROFILE_V2_CANDIDATE",
+      "circuitId": "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+      "verifyingKeyId": "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74",
+      "publicInputOrder": [
+        "spendIdHash",
+        "headEventHash",
+        "spendTokenHash",
+        "statementId",
+        "scopeId",
+        "nullifier",
+        "storeSetRoot",
+        "minDayIndex",
+        "minimumAmountCents",
+        "commitmentStore",
+        "commitmentDayIndex",
+        "commitmentTotal",
+        "maxDayIndex",
+        "expectedCurrencyCode",
+        "commitmentCurrency"
+      ],
+      "verifierKeyIdProfile": "halo2_atomic_purchase_v2_candidate_k14",
+      "artifactHash": "sha256:d9ba9081be637286d16199b29f2e59802a0d4086365492e5d254a4b3ce873fe0",
+      "sourceCommit": "cf7838027ea472e611e52f3d487ee928b488676f",
+      "binarySha256": "sha256:33c486c88a8cf14a63662ff4466e944b4700d444d2f3bd53f0791902c96f579a",
+      "validFromProtocolVersion": "1.0.0-rc.2",
+      "auditStatus": "INTERNAL_REVIEW",
+      "verifierParams": {
+        "k": 14,
+        "defaultK": 14,
+        "curveFamily": "pasta",
+        "transcript": "halo2_ipa",
+        "currencyEncoding": "ISO_4217_ALPHA3_ASCII_U24_BE",
+        "commitmentEncoding": "zk_demo_rs_atomic_purchase_v2_candidate",
+        "publicInputOrder": [
+          "spendIdHash",
+          "headEventHash",
+          "spendTokenHash",
+          "statementId",
+          "scopeId",
+          "nullifier",
+          "storeSetRoot",
+          "minDayIndex",
+          "minimumAmountCents",
+          "commitmentStore",
+          "commitmentDayIndex",
+          "commitmentTotal",
+          "maxDayIndex",
+          "expectedCurrencyCode",
+          "commitmentCurrency"
+        ]
+      },
+      "maturity": "LAB_CANDIDATE_NOT_ADOPTED",
+      "productionZk": false,
+      "status": "candidate"
+    }
+  ]
+}

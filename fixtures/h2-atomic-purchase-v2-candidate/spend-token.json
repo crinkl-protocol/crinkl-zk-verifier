@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "protocol": {
+    "protocolVersion": "1.0.0-rc.2"
+  },
+  "spend": {
+    "spendId": "spend-atomic-purchase-v2-public-fixture-001"
+  },
+  "lineage": {
+    "headEventHash": "sha256:ee84c5294cbca8825e80aca7e72f283455a38668d0676c86890331495f925711"
+  },
+  "issuer": {
+    "issuerId": "pricechain-labs-public-fixture"
+  },
+  "zk": {
+    "commitments": {
+      "C_store": "poseidon:26fc0efcabdf9b87dc7189fd2114583ce4eb97789c83d9e8962f404682b3dc7a",
+      "C_dayIndex": "poseidon:34c1b9990eda52a8ad2c21b00c2783887750482f560d55c63e458a7c30c9eaf0",
+      "C_total": "poseidon:3a98d49a0fce1687d4d4a7f84d121ca5c924ec3dcb8542fa57f25cbd437409b8",
+      "C_currency": "poseidon:271bf790968cba00f36248aaae6f68130917ddf3e5f1ae6a85c47e1cc19dfc8b"
+    }
+  },
+  "signatures": {
+    "tokenHash": "sha256:26aa4176502c857a9a53693f501ec60e1ca6b2bac6142939915ca4296dcba08d"
+  }
+}

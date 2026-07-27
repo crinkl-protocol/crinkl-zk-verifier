@@ -1,0 +1,11 @@
+{
+  "domain": "crinkl:statement:v1",
+  "schemaVersion": 1,
+  "type": "PRIVATE_COMMERCE_ATOMIC_PURCHASE",
+  "protocolVersion": "1.0.0-rc.2",
+  "storeSetRoot": "poseidon:16c9f242ccb44157790a4a326f0c0f266f245cc1ef9946e796bfba3924e6f05f",
+  "minDayIndex": 20280,
+  "maxDayIndex": 20310,
+  "minimumAmountCents": 2000,
+  "currency": "USD"
+}
