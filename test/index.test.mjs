@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
+import "./spend-token-admission.test.mjs";
 
 import {
   H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER,
@@ -203,6 +204,19 @@ test("registry publicInputOrder mismatch fails closed", async () => {
 
   assert.equal(result.ok, false);
   assert.equal(result.reason, "public_input_order_mismatch");
+});
+
+test("registry protocol version mismatch fails closed", async () => {
+  const fixture = makeFixture();
+  fixture.manifest.entries[0].protocolVersion = "1.0.0-rc.1";
+
+  const result = await verifySpendZkProof({
+    ...fixture,
+    backend: acceptingBackend
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "unsupported_protocol_version");
 });
 
 test("atomic purchase v2 candidate binds one token, one statement, and all four commitments", async () => {
