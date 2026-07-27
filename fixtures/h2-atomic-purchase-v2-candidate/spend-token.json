@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "protocol": {
-    "protocolVersion": "1.0.0-rc.2"
+    "protocolVersion": "1.0.0-rc.1"
   },
   "spend": {
     "spendId": "spend-atomic-purchase-v2-public-fixture-001"
@@ -21,6 +21,6 @@
     }
   },
   "signatures": {
-    "tokenHash": "sha256:26aa4176502c857a9a53693f501ec60e1ca6b2bac6142939915ca4296dcba08d"
+    "tokenHash": "sha256:de7a2c21ab737b990323a0defca04ad10d0fe8519b83ab7d8baffccc3518dfb4"
   }
 }

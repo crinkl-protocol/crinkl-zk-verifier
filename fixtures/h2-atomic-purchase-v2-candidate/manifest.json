@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "protocolVersion": "1.0.0-rc.2",
+  "protocolVersion": "1.0.0-rc.1",
   "entries": [
     {
       "schemaVersion": 1,
-      "protocolVersion": "1.0.0-rc.2",
+      "protocolVersion": "1.0.0-rc.1",
       "proofSystem": "HALO2_IPA",
       "profileId": "CAMPAIGN_QUALIFICATION_ATOMIC_PURCHASE_PROFILE_V2_CANDIDATE",
       "circuitId": "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
@@ -27,10 +27,10 @@
         "commitmentCurrency"
       ],
       "verifierKeyIdProfile": "halo2_atomic_purchase_v2_candidate_k14",
-      "artifactHash": "sha256:d9ba9081be637286d16199b29f2e59802a0d4086365492e5d254a4b3ce873fe0",
+      "artifactHash": "sha256:e21e4bf911544d34d87382bd54712fb7cb4c2f0e50059db62a750dc0bb624947",
       "sourceCommit": "cf7838027ea472e611e52f3d487ee928b488676f",
       "binarySha256": "sha256:33c486c88a8cf14a63662ff4466e944b4700d444d2f3bd53f0791902c96f579a",
-      "validFromProtocolVersion": "1.0.0-rc.2",
+      "validFromProtocolVersion": "1.0.0-rc.1",
       "auditStatus": "INTERNAL_REVIEW",
       "verifierParams": {
         "k": 14,

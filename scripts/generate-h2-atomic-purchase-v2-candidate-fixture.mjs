@@ -8,7 +8,7 @@ import { H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER } from "../src/index
 
 const zkDemoBinary = process.env.CRNKL_ZK_DEMO_BIN;
 const sourceRoot = process.env.CRNKL_ZK_DEMO_SOURCE_ROOT;
-const protocolVersion = "1.0.0-rc.2";
+const protocolVersion = "1.0.0-rc.1";
 const proofSystem = "HALO2_IPA";
 const profileId = "CAMPAIGN_QUALIFICATION_ATOMIC_PURCHASE_PROFILE_V2_CANDIDATE";
 const circuitId = "H2_ATOMIC_PURCHASE_V2_CANDIDATE";
