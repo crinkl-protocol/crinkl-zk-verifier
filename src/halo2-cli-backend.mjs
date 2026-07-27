@@ -1,5 +1,8 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_K = 14;
@@ -17,6 +20,20 @@ export function createHalo2CliBackend(options = {}) {
   return {
     async verify({ proof, registryEntry }) {
       const k = resolveK({ options, proof, registryEntry });
+      if (proof.circuitId === "H2_ATOMIC_PURCHASE_V2_CANDIDATE") {
+        return verifyAtomicPurchaseV2({
+          command,
+          argsPrefix,
+          cwd: options.cwd,
+          proof,
+          registryEntry,
+          k
+        });
+      }
+      if (proof.circuitId !== "H2_PROMO_OPEN_MIN_V1") {
+        return { ok: false, reason: "unsupported_circuit_id" };
+      }
+
       const args = [
         ...argsPrefix,
         "verify-promo-open-min",
@@ -63,6 +80,51 @@ export function createHalo2CliBackend(options = {}) {
       return { ok: true };
     }
   };
+}
+
+async function verifyAtomicPurchaseV2({ command, argsPrefix, cwd, proof, registryEntry, k }) {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "crnkl-zk-verify-atomic-v2-"));
+  const requestFile = join(temporaryDirectory, "request.json");
+
+  try {
+    await writeFile(
+      requestFile,
+      `${JSON.stringify({
+        publicInputs: proof.publicInputs,
+        proof: proof.proof,
+        k
+      })}\n`,
+      { encoding: "utf8", mode: 0o600 }
+    );
+
+    const result = await runCommand({
+      command,
+      args: [
+        ...argsPrefix,
+        "verify-atomic-purchase-v2",
+        "--request-file",
+        requestFile
+      ],
+      cwd
+    });
+    if (!result.ok) {
+      return { ok: false, reason: result.reason };
+    }
+
+    const parsed = parseJsonLine(result.stdout);
+    if (
+      !parsed ||
+      parsed.ok !== true ||
+      parsed.circuitId !== "H2_ATOMIC_PURCHASE_V2_CANDIDATE" ||
+      parsed.verifyingKeyId !== registryEntry.verifyingKeyId
+    ) {
+      return { ok: false, reason: "halo2_cli_rejected" };
+    }
+
+    return { ok: true };
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
 }
 
 

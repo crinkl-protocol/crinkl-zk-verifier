@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 import {
+  H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER,
   H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER,
   createHalo2CliBackend,
   verifySpendZkProof
@@ -15,6 +16,10 @@ const fixtureDir = new URL("../fixtures/h2-promo-open-min-v1/", import.meta.url)
 let realFixturePromise;
 
 test("real Halo2 CLI backend verifies a generated open-min proof", async (t) => {
+  if (!cargoManifestPath) {
+    t.skip("set CRNKL_ZK_DEMO_MANIFEST_PATH to run the real Halo2 backend test");
+    return;
+  }
   const fixture = await getRealHalo2Fixture(t);
   const result = await verifySpendZkProof({
     ...fixture,
@@ -42,6 +47,10 @@ test("real Halo2 CLI backend verifies the published open-min fixture", async (t)
 });
 
 test("real Halo2 CLI backend rejects changed commitment public input", async (t) => {
+  if (!cargoManifestPath) {
+    t.skip("set CRNKL_ZK_DEMO_MANIFEST_PATH to run the real Halo2 backend test");
+    return;
+  }
   const fixture = await getRealHalo2Fixture(t);
   fixture.proof.publicInputs.commitmentTotal = poseidon("changed-total-commitment");
 
@@ -55,6 +64,10 @@ test("real Halo2 CLI backend rejects changed commitment public input", async (t)
 });
 
 test("real Halo2 CLI backend rejects changed proof bytes", async (t) => {
+  if (!cargoManifestPath) {
+    t.skip("set CRNKL_ZK_DEMO_MANIFEST_PATH to run the real Halo2 backend test");
+    return;
+  }
   const fixture = await getRealHalo2Fixture(t);
   fixture.proof.proof = "Y2hhbmdlZA==";
 
@@ -65,6 +78,39 @@ test("real Halo2 CLI backend rejects changed proof bytes", async (t) => {
 
   assert.equal(result.ok, false);
   assert.equal(result.reason, "cryptographic_verification_failed");
+});
+
+test("Halo2 CLI backend sends atomic purchase v2 through the JSON request contract", async () => {
+  const fixture = makeAtomicPurchaseV2Fixture();
+  const verifierScript = `
+    const { readFileSync } = require("node:fs");
+    const args = process.argv.slice(1);
+    const requestIndex = args.indexOf("--request-file");
+    const request = JSON.parse(readFileSync(args[requestIndex + 1], "utf8"));
+    const ok =
+      args[0] === "verify-atomic-purchase-v2" &&
+      request.k === 14 &&
+      request.proof === "cHJvb2Y=" &&
+      request.publicInputs.expectedCurrencyCode === 5591876 &&
+      request.publicInputs.commitmentCurrency.startsWith("poseidon:");
+    process.stdout.write(JSON.stringify({
+      ok,
+      circuitId: "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+      verifyingKeyId: "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74"
+    }) + "\\n");
+  `;
+
+  const result = await verifySpendZkProof({
+    ...fixture,
+    backend: createHalo2CliBackend({
+      command: process.execPath,
+      argsPrefix: ["--eval", verifierScript],
+      k: 14
+    })
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, "ok");
 });
 
 async function loadPublishedFixture() {
@@ -219,6 +265,96 @@ async function makeRealHalo2Fixture() {
           verifierKeyIdProfile: "halo2_pinned_debug_v1",
           verifierParams: { k: 14 },
           status: "alpha_current_business"
+        }
+      ]
+    },
+    hashStatement: (candidate) => hash(JSON.stringify(candidate))
+  };
+}
+
+function makeAtomicPurchaseV2Fixture() {
+  const spendId = "spend-atomic-cli-contract";
+  const headEventHash = hash("atomic-cli-head");
+  const spendTokenHash = hash("atomic-cli-token");
+  const statement = {
+    domain: "crinkl:statement:v1",
+    schemaVersion: 1,
+    type: "PRIVATE_COMMERCE_ATOMIC_PURCHASE",
+    protocolVersion: "1.0.0-rc.2",
+    storeSetRoot: poseidon("atomic-cli-store-set"),
+    minDayIndex: 20_000,
+    maxDayIndex: 20_200,
+    minimumAmountCents: 1_000,
+    currency: "USD"
+  };
+  const statementId = hash(JSON.stringify(statement));
+  const scopeId = hash("atomic-cli-scope");
+  const nullifier = hash("atomic-cli-nullifier");
+  const commitments = {
+    C_store: poseidon("atomic-cli-store"),
+    C_dayIndex: poseidon("atomic-cli-day"),
+    C_total: poseidon("atomic-cli-total"),
+    C_currency: poseidon("atomic-cli-currency")
+  };
+  const verifyingKeyId =
+    "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74";
+
+  return {
+    proof: {
+      schemaVersion: 1,
+      protocolVersion: "1.0.0-rc.2",
+      spendId,
+      spendTokenHash,
+      binding: { headEventHash },
+      statement,
+      statementId,
+      scopeId,
+      nullifier,
+      proofSystem: "HALO2_IPA",
+      circuitId: "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+      verifyingKeyId,
+      publicInputs: {
+        spendIdHash: hash(spendId),
+        headEventHash,
+        spendTokenHash,
+        statementId,
+        scopeId,
+        nullifier,
+        storeSetRoot: statement.storeSetRoot,
+        minDayIndex: statement.minDayIndex,
+        minimumAmountCents: statement.minimumAmountCents,
+        commitmentStore: commitments.C_store,
+        commitmentDayIndex: commitments.C_dayIndex,
+        commitmentTotal: commitments.C_total,
+        maxDayIndex: statement.maxDayIndex,
+        expectedCurrencyCode: 5_591_876,
+        commitmentCurrency: commitments.C_currency
+      },
+      proof: "cHJvb2Y=",
+      issuedBy: "crinkl-zk-verifier-cli-contract-test",
+      createdAt: "2026-07-27T00:00:00.000Z",
+      k: 14
+    },
+    spendToken: {
+      lineage: { headEventHash },
+      protocol: { protocolVersion: "1.0.0-rc.2" },
+      signatures: { tokenHash: spendTokenHash },
+      zk: { commitments }
+    },
+    manifest: {
+      schemaVersion: 1,
+      protocolVersion: "1.0.0-rc.2",
+      entries: [
+        {
+          schemaVersion: 1,
+          protocolVersion: "1.0.0-rc.2",
+          proofSystem: "HALO2_IPA",
+          circuitId: "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+          verifyingKeyId,
+          publicInputOrder: [...H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER],
+          verifierKeyIdProfile: "halo2_atomic_purchase_v2_candidate",
+          verifierParams: { k: 14 },
+          status: "LAB_CANDIDATE_NOT_ADOPTED"
         }
       ]
     },
