@@ -3,14 +3,21 @@ export type VerificationReason =
   | "invalid_input"
   | "malformed_proof_artifact"
   | "unsupported_protocol_version"
+  | "malformed_spend_token"
   | "spend_token_mismatch"
+  | "spend_token_hash_mismatch"
+  | "spend_token_signature_invalid"
+  | "spend_token_issuer_unauthorized"
+  | "spend_token_head_not_accepted"
   | "spend_token_commitment_mismatch"
+  | "invalid_verification_policy"
   | "statement_id_mismatch"
   | "unknown_proof_system"
   | "unknown_circuit_id"
   | "unknown_verifying_key_id"
   | "public_input_order_mismatch"
   | "public_input_mismatch"
+  | "nullifier_replay_store_required"
   | "replayed_nullifier"
   | "unsupported_cryptographic_backend"
   | "cryptographic_verification_failed";
@@ -24,7 +31,10 @@ export interface VerificationResult {
   statementId?: string;
   scopeId?: string;
   nullifier?: string;
+  spendTokenAdmissionChecked?: boolean;
+  headAcceptanceChecked?: boolean;
   replayChecked?: boolean;
+  replayRecorded?: boolean;
 }
 
 export interface VerifierRegistryEntryV1 {
@@ -62,6 +72,31 @@ export interface VerificationBackend {
 
 export interface NullifierReplayStore {
   has(scopeId: string, nullifier: string): boolean;
+  consume(scopeId: string, nullifier: string): Promise<boolean> | boolean;
+}
+
+export interface SpendTokenIssuerRegistry {
+  isAuthorized(input: {
+    issuedBy: string;
+    publicKey: string;
+    protocolVersion: string;
+  }): Promise<boolean> | boolean;
+}
+
+export interface SpendTokenHeadStore {
+  isAccepted(input: {
+    spendId: string;
+    spendTokenHash: string;
+    headEventHash: string;
+    eventCount: number;
+    protocolVersion: string;
+  }): Promise<boolean> | boolean;
+}
+
+export interface VerificationPolicy {
+  spendTokenAdmission?: "legacy" | "required";
+  headAcceptance?: "token-bound" | "required";
+  nullifierReplay?: "optional" | "required";
 }
 
 export interface VerifySpendZkProofInput {
@@ -71,12 +106,34 @@ export interface VerifySpendZkProofInput {
   hashStatement(statement: unknown): string;
   backend?: VerificationBackend;
   seenNullifiers?: NullifierReplayStore | Set<string>;
+  verificationPolicy?: VerificationPolicy;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  headStore?: SpendTokenHeadStore;
 }
 
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER: readonly string[];
 export const H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER: readonly string[];
 
 export function verifySpendZkProof(input: VerifySpendZkProofInput): Promise<VerificationResult>;
+
+export interface SpendTokenAdmissionResult {
+  ok: boolean;
+  reason: VerificationReason;
+  spendId?: string;
+  spendTokenHash?: string;
+  headEventHash?: string;
+  eventCount?: number;
+  protocolVersion?: string;
+  issuedBy?: string;
+  publicKey?: string;
+}
+
+export function canonicalize(value: unknown): string;
+export function verifySpendAttestationTokenV1(input: {
+  token: Record<string, unknown>;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  supportedProtocolVersions?: string[];
+}): Promise<SpendTokenAdmissionResult>;
 
 export interface Halo2CliBackendOptions {
   command?: string;

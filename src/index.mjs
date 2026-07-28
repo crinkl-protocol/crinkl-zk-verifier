@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
+import { verifySpendAttestationTokenV1 } from "./spend-token-admission.mjs";
 
 export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
+export {
+  canonicalize,
+  verifySpendAttestationTokenV1
+} from "./spend-token-admission.mjs";
 
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER = Object.freeze([
   "spendIdHash",
@@ -60,7 +65,17 @@ export async function verifySpendZkProof(input) {
     return rejected("invalid_input");
   }
 
-  const { proof, manifest, spendToken, hashStatement, backend, seenNullifiers } = input;
+  const {
+    proof,
+    manifest,
+    spendToken,
+    hashStatement,
+    backend,
+    seenNullifiers,
+    verificationPolicy,
+    issuerRegistry,
+    headStore
+  } = input;
   const shape = validateProofShape(proof);
   if (!shape.ok) {
     return rejected(shape.reason);
@@ -86,6 +101,12 @@ export async function verifySpendZkProof(input) {
   if (!registryEntry.ok) {
     return rejected(registryEntry.reason, proof);
   }
+  if (
+    manifest.protocolVersion !== proof.protocolVersion ||
+    registryEntry.entry.protocolVersion !== proof.protocolVersion
+  ) {
+    return rejected("unsupported_protocol_version", proof);
+  }
 
   const orderCheck = verifyPublicInputOrder(
     registryEntry.entry.publicInputOrder,
@@ -109,13 +130,86 @@ export async function verifySpendZkProof(input) {
     return rejected(bindingCheck.reason, proof);
   }
 
+  const policyResult = normalizeVerificationPolicy(verificationPolicy);
+  if (!policyResult.ok) {
+    return rejected("invalid_verification_policy", proof);
+  }
+  const policy = policyResult.policy;
+  let spendTokenAdmissionChecked = false;
+  let headAcceptanceChecked = false;
+  if (policy.spendTokenAdmission === "required") {
+    const admission = await verifySpendAttestationTokenV1({
+      token: spendToken,
+      issuerRegistry,
+      supportedProtocolVersions: [proof.protocolVersion]
+    });
+    spendTokenAdmissionChecked = true;
+    if (!admission.ok) {
+      return rejected(admission.reason, proof, { spendTokenAdmissionChecked });
+    }
+    if (
+      admission.spendId !== proof.spendId ||
+      admission.spendTokenHash !== proof.spendTokenHash ||
+      admission.headEventHash !== normalizeSha256Id(proof.binding.headEventHash)
+    ) {
+      return rejected("spend_token_mismatch", proof, {
+        spendTokenAdmissionChecked
+      });
+    }
+
+    if (policy.headAcceptance === "required") {
+      headAcceptanceChecked = true;
+      if (!headStore || typeof headStore.isAccepted !== "function") {
+        return rejected("spend_token_head_not_accepted", proof, {
+          spendTokenAdmissionChecked,
+          headAcceptanceChecked
+        });
+      }
+      let headAccepted = false;
+      try {
+        headAccepted =
+          (await headStore.isAccepted({
+            spendId: admission.spendId,
+            spendTokenHash: admission.spendTokenHash,
+            headEventHash: admission.headEventHash,
+            eventCount: admission.eventCount,
+            protocolVersion: admission.protocolVersion
+          })) === true;
+      } catch {
+        headAccepted = false;
+      }
+      if (!headAccepted) {
+        return rejected("spend_token_head_not_accepted", proof, {
+          spendTokenAdmissionChecked,
+          headAcceptanceChecked
+        });
+      }
+    }
+  }
+
+  if (policy.nullifierReplay === "required" && !isConsumableReplayStore(seenNullifiers)) {
+    return rejected("nullifier_replay_store_required", proof, {
+      spendTokenAdmissionChecked,
+      headAcceptanceChecked,
+      replayChecked: false
+    });
+  }
+
   const replayCheck = verifyReplay({ scopeId: proof.scopeId, nullifier: proof.nullifier, seenNullifiers });
   if (!replayCheck.ok) {
-    return rejected("replayed_nullifier", proof, { replayChecked: true });
+    return rejected("replayed_nullifier", proof, {
+      spendTokenAdmissionChecked,
+      headAcceptanceChecked,
+      replayChecked: true
+    });
   }
 
   if (!backend || typeof backend.verify !== "function") {
-    return rejected("unsupported_cryptographic_backend", proof, { replayChecked: replayCheck.checked });
+    return rejected("unsupported_cryptographic_backend", proof, {
+      spendTokenAdmissionChecked,
+      headAcceptanceChecked,
+      replayChecked: replayCheck.checked
+    });
   }
 
   const cryptographicResult = await backend.verify({
@@ -125,10 +219,37 @@ export async function verifySpendZkProof(input) {
   });
 
   if (!isRecord(cryptographicResult) || cryptographicResult.ok !== true) {
-    return rejected("cryptographic_verification_failed", proof, { replayChecked: replayCheck.checked });
+    return rejected("cryptographic_verification_failed", proof, {
+      spendTokenAdmissionChecked,
+      headAcceptanceChecked,
+      replayChecked: replayCheck.checked
+    });
   }
 
-  return accepted(proof, { replayChecked: replayCheck.checked });
+  let replayRecorded = false;
+  if (policy.nullifierReplay === "required") {
+    const recordResult = await consumeReplay({
+      scopeId: proof.scopeId,
+      nullifier: proof.nullifier,
+      seenNullifiers
+    });
+    if (!recordResult.ok) {
+      return rejected("replayed_nullifier", proof, {
+        spendTokenAdmissionChecked,
+        headAcceptanceChecked,
+        replayChecked: true,
+        replayRecorded: false
+      });
+    }
+    replayRecorded = true;
+  }
+
+  return accepted(proof, {
+    spendTokenAdmissionChecked,
+    headAcceptanceChecked,
+    replayChecked: replayCheck.checked,
+    replayRecorded
+  });
 }
 
 function validateProofShape(proof) {
@@ -348,11 +469,14 @@ function verifyBindings({ proof, spendToken, profile }) {
       : { ok: false, reason: "spend_token_commitment_mismatch" };
   }
 
-  const tokenHash = spendToken.signatures?.tokenHash;
-  const headEventHash = spendToken.lineage?.headEventHash;
+  const tokenHash = normalizeSha256Id(spendToken.signatures?.tokenHash);
+  const headEventHash = normalizeSha256Id(spendToken.lineage?.headEventHash);
   const protocolVersion = spendToken.protocol?.protocolVersion;
 
-  if (tokenHash !== proof.spendTokenHash || headEventHash !== proof.binding.headEventHash) {
+  if (
+    tokenHash !== proof.spendTokenHash ||
+    headEventHash !== normalizeSha256Id(proof.binding.headEventHash)
+  ) {
     return { ok: false, reason: "spend_token_mismatch" };
   }
 
@@ -384,6 +508,71 @@ function verifyReplay({ scopeId, nullifier, seenNullifiers }) {
   }
 
   return { ok: false, checked: true };
+}
+
+function normalizeVerificationPolicy(value) {
+  if (value === undefined) {
+    return {
+      ok: true,
+      policy: {
+        spendTokenAdmission: "legacy",
+        headAcceptance: "token-bound",
+        nullifierReplay: "optional"
+      }
+    };
+  }
+  if (!isRecord(value)) {
+    return { ok: false };
+  }
+  const allowedKeys = new Set([
+    "spendTokenAdmission",
+    "headAcceptance",
+    "nullifierReplay"
+  ]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) {
+    return { ok: false };
+  }
+  if (
+    !["legacy", "required"].includes(value.spendTokenAdmission ?? "legacy") ||
+    !["token-bound", "required"].includes(value.headAcceptance ?? "token-bound") ||
+    !["optional", "required"].includes(value.nullifierReplay ?? "optional")
+  ) {
+    return { ok: false };
+  }
+  const policy = {
+    spendTokenAdmission: value.spendTokenAdmission ?? "legacy",
+    headAcceptance: value.headAcceptance ?? "token-bound",
+    nullifierReplay: value.nullifierReplay ?? "optional"
+  };
+  if (
+    policy.headAcceptance === "required" &&
+    policy.spendTokenAdmission !== "required"
+  ) {
+    return { ok: false };
+  }
+  return {
+    ok: true,
+    policy
+  };
+}
+
+function isConsumableReplayStore(value) {
+  return Boolean(
+    value &&
+      !(value instanceof Set) &&
+      typeof value.has === "function" &&
+      typeof value.consume === "function"
+  );
+}
+
+async function consumeReplay({ scopeId, nullifier, seenNullifiers }) {
+  try {
+    return {
+      ok: (await seenNullifiers.consume(scopeId, nullifier)) === true
+    };
+  } catch {
+    return { ok: false };
+  }
 }
 
 function accepted(proof, extra = {}) {
@@ -424,6 +613,12 @@ function hashString(value) {
 
 function isHash(value) {
   return typeof value === "string" && HASH_RE.test(value);
+}
+
+function normalizeSha256Id(value) {
+  if (typeof value !== "string") return null;
+  if (HASH_RE.test(value)) return value;
+  return /^[0-9a-f]{64}$/.test(value) ? `sha256:${value}` : null;
 }
 
 function isPoseidon(value) {
