@@ -5,10 +5,20 @@ import {
   createCampaignProofAuthorizationVerifier,
   hashCampaignHolderProofAuthorizationRequestContextV1
 } from "./campaign-proof-authorization.mjs";
+import {
+  claimCampaignProofJobAuthorizationGrantV1,
+  createCampaignProofJobAuthorizer,
+  hashCampaignProofJobAuthorizationGrantV1,
+  verifyCampaignProofJobAuthorizationGrantV1
+} from "./campaign-proof-job-authorization.mjs";
 
 export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
 export {
+  claimCampaignProofJobAuthorizationGrantV1,
+  createCampaignProofJobAuthorizer,
+  hashCampaignProofJobAuthorizationGrantV1,
   hashCampaignHolderProofAuthorizationRequestContextV1,
+  verifyCampaignProofJobAuthorizationGrantV1,
   verifySpendHolderControlV2
 };
 export {

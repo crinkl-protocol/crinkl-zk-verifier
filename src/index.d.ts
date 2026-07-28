@@ -329,6 +329,153 @@ export function verifyCampaignProofAuthorizationV1(input: {
   now?: Date | string | number;
 }): Promise<CampaignProofAuthorizationResultV1>;
 
+export interface CampaignProofJobAuthorizationGrantV1 {
+  domain: "crinkl:campaign:proof-job-authorization-grant:v1";
+  schemaVersion: 1;
+  protocolVersion: "1.0.0-rc.1";
+  grantId: string;
+  requestContextHash: string;
+  campaignId: string;
+  campaignEpochRef: string;
+  campaignPolicyPackageRef: string;
+  scopeId: string;
+  statementId: string;
+  proofProfile: {
+    proofSystem: string;
+    circuitId: string;
+    verifyingKeyId: string;
+  };
+  inputManifestRef: string;
+  recipientDisclosurePolicyRef: string;
+  authorizedSpendInputs: Array<{
+    spendId: string;
+    spendTokenHash: string;
+    canonicalHeadEventHash: string;
+    challengeId: string;
+  }>;
+  verifierId: string;
+  authorizedAt: string;
+  expiresAt: string;
+}
+
+export type CampaignProofJobAuthorizationReason =
+  | VerificationReason
+  | HolderControlReason
+  | "campaign_proof_job_authorization_granted"
+  | "campaign_proof_job_authorization_verified"
+  | "campaign_proof_job_authorization_claimed"
+  | "malformed_campaign_request_context"
+  | "campaign_request_context_mismatch"
+  | "campaign_proof_authorization_expired"
+  | "campaign_proof_authorization_lifetime_exceeded"
+  | "malformed_authorized_input_manifest"
+  | "authorized_input_manifest_mismatch"
+  | "authorized_spend_input_mismatch"
+  | "holder_authorization_set_mismatch"
+  | "holder_authorization_result_mismatch"
+  | "spend_token_head_store_required"
+  | "spend_token_verifier_failed"
+  | "campaign_holder_verifier_failed"
+  | "grant_id_generation_failed"
+  | "grant_shape_invalid"
+  | "grant_ref_invalid"
+  | "grant_ref_mismatch"
+  | "proof_job_authorization_expired"
+  | "proof_job_authorization_store_required"
+  | "proof_job_authorization_store_race"
+  | "proof_job_authorization_not_claimable";
+
+export interface CampaignProofJobAuthorizationGrantStoreV1 {
+  authorize(input: {
+    grantRef: string;
+    grant: CampaignProofJobAuthorizationGrantV1;
+    initialState: "AUTHORIZED";
+  }): Promise<boolean> | boolean;
+  claim?(input: {
+    grantRef: string;
+    expectedState: "AUTHORIZED";
+    nextState: "CLAIMED";
+  }): Promise<boolean> | boolean;
+}
+
+export interface CampaignProofJobAuthorizationResultV1 {
+  ok: boolean;
+  reason: CampaignProofJobAuthorizationReason;
+  grant?: CampaignProofJobAuthorizationGrantV1;
+  grantRef?: string;
+  grantId?: string;
+  lifecycleState?: "AUTHORIZED" | "CLAIMED";
+  requestContextHash?: string;
+  requestContextChecked?: boolean;
+  inputManifestChecked?: boolean;
+  spendHeadsChecked?: boolean;
+  holderControlsChecked?: number;
+  consumedChallengeIds?: string[];
+  partialConsumption?: boolean;
+  retryRule?: "NEW_HOLDER_CHALLENGES_REQUIRED";
+}
+
+export interface CampaignProofJobHolderAuthorizationV1 {
+  spendToken: Record<string, unknown>;
+  holderChallenge: SpendHolderChallengeV2;
+  holderProof: SpendHolderControlProofV2;
+}
+
+export function hashCampaignProofJobAuthorizationGrantV1(
+  grant: CampaignProofJobAuthorizationGrantV1
+): string;
+
+export function verifyCampaignProofJobAuthorizationGrantV1(input: {
+  grant: CampaignProofJobAuthorizationGrantV1;
+  expectedGrantRef: string;
+  now?: Date | string | number;
+}): CampaignProofJobAuthorizationResultV1;
+
+export function claimCampaignProofJobAuthorizationGrantV1(input: {
+  grant: CampaignProofJobAuthorizationGrantV1;
+  expectedGrantRef: string;
+  now?: Date | string | number;
+  grantStore?: {
+    claim(input: {
+      grantRef: string;
+      expectedState: "AUTHORIZED";
+      nextState: "CLAIMED";
+    }): Promise<boolean> | boolean;
+  };
+}): Promise<CampaignProofJobAuthorizationResultV1>;
+
+export function createCampaignProofJobAuthorizer(options?: {
+  verifySpendToken?(input: {
+    token: Record<string, unknown>;
+    issuerRegistry?: SpendTokenIssuerRegistry;
+    supportedProtocolVersions?: string[];
+  }): Promise<SpendTokenAdmissionResult> | SpendTokenAdmissionResult;
+  verifyHolderControl?(input: {
+    token: Record<string, unknown>;
+    issuerRegistry?: SpendTokenIssuerRegistry;
+    supportedProtocolVersions?: string[];
+    challenge: SpendHolderChallengeV2;
+    holderProof: SpendHolderControlProofV2;
+    expectedContext: SpendHolderExpectedContextV2;
+    now?: Date | string | number;
+    challengeStore?: SpendHolderChallengeStoreV2;
+  }): Promise<SpendHolderControlResultV2> | SpendHolderControlResultV2;
+  generateGrantId?(): string;
+  maximumGrantLifetimeMs?: number;
+}): (input: {
+  requestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  expectedScopeId: string;
+  expectedVerifierId: string;
+  authorizedInputManifest: Record<string, unknown>;
+  holderAuthorizations: CampaignProofJobHolderAuthorizationV1[];
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  headStore?: SpendTokenHeadStore;
+  challengeStore?: SpendHolderChallengeStoreV2;
+  grantStore?: CampaignProofJobAuthorizationGrantStoreV1;
+  supportedProtocolVersions?: string[];
+  now?: Date | string | number;
+}) => Promise<CampaignProofJobAuthorizationResultV1>;
+
 export interface Halo2CliBackendOptions {
   command?: string;
   argsPrefix?: string[];
