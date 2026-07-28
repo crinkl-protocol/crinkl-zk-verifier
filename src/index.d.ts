@@ -39,6 +39,21 @@ export type HolderControlReason =
   | "holder_proof_binding_mismatch"
   | "holder_signature_invalid";
 
+export type CampaignProofAuthorizationReason =
+  | VerificationReason
+  | HolderControlReason
+  | "campaign_proof_authorization_verified"
+  | "malformed_campaign_authorization_package"
+  | "malformed_campaign_request_context"
+  | "campaign_request_context_mismatch"
+  | "campaign_proof_authorization_expired"
+  | "malformed_authorized_input_manifest"
+  | "authorized_input_manifest_mismatch"
+  | "authorized_spend_input_mismatch"
+  | "campaign_proof_verifier_failed"
+  | "campaign_holder_verifier_failed"
+  | "campaign_nullifier_consumption_failed";
+
 export interface VerificationResult {
   ok: boolean;
   reason: VerificationReason;
@@ -240,6 +255,79 @@ export function verifySpendHolderControlV2(input: {
   now?: Date | string | number;
   challengeStore?: SpendHolderChallengeStoreV2;
 }): Promise<SpendHolderControlResultV2>;
+
+export interface CampaignHolderProofAuthorizationRequestContextV1 {
+  domain: "crinkl:campaign:holder-proof-authorization-request-context:v1";
+  schemaVersion: 1;
+  protocolVersion: "1.0.0-rc.1";
+  campaignId: string;
+  campaignEpochRef: string;
+  campaignPolicyPackageRef: string;
+  conditionId: string;
+  requirementId: string;
+  evaluationContextHash: string;
+  statementId: string;
+  statementEvaluationProfileRef: string;
+  proofProfile: {
+    proofSystem: string;
+    circuitId: string;
+    verifyingKeyId: string;
+  };
+  inputManifestRef: string;
+  recipientDisclosurePolicyRef: string;
+  authorizationExpiresAt: string;
+}
+
+export interface CampaignProofAuthorizationPackageV1 {
+  schemaVersion: 1;
+  requestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  spendToken: Record<string, unknown>;
+  holderChallenge: SpendHolderChallengeV2;
+  holderProof: SpendHolderControlProofV2;
+  atomicProof: Record<string, unknown>;
+}
+
+export interface CampaignProofAuthorizationResultV1 {
+  ok: boolean;
+  reason: CampaignProofAuthorizationReason;
+  requestContextHash?: string;
+  campaignId?: string;
+  campaignEpochRef?: string;
+  statementId?: string;
+  scopeId?: string;
+  nullifier?: string;
+  spendTokenHash?: string;
+  requestContextChecked?: boolean;
+  inputManifestChecked?: boolean;
+  atomicProofChecked?: boolean;
+  holderControlChecked?: boolean;
+  holderChallengeConsumed?: boolean;
+  campaignNullifierChecked?: boolean;
+  campaignNullifierConsumed?: boolean;
+  partialConsumption?: boolean;
+  retryRule?: "NEW_HOLDER_CHALLENGE_REQUIRED";
+}
+
+export function hashCampaignHolderProofAuthorizationRequestContextV1(
+  requestContext: CampaignHolderProofAuthorizationRequestContextV1
+): string;
+
+export function verifyCampaignProofAuthorizationV1(input: {
+  package: CampaignProofAuthorizationPackageV1;
+  expectedRequestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  expectedScopeId: string;
+  expectedVerifierId: string;
+  authorizedInputManifest: Record<string, unknown>;
+  proofArtifactManifest: VerifierRegistryManifestV1;
+  hashStatement(statement: unknown): string;
+  backend?: VerificationBackend;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  headStore?: SpendTokenHeadStore;
+  challengeStore?: SpendHolderChallengeStoreV2;
+  campaignNullifierStore?: NullifierReplayStore;
+  supportedProtocolVersions?: string[];
+  now?: Date | string | number;
+}): Promise<CampaignProofAuthorizationResultV1>;
 
 export interface Halo2CliBackendOptions {
   command?: string;

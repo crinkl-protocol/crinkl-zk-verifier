@@ -1,8 +1,16 @@
 import { createHash } from "node:crypto";
 import { verifySpendAttestationToken } from "./spend-token-admission.mjs";
+import { verifySpendHolderControlV2 } from "./spend-holder-control.mjs";
+import {
+  createCampaignProofAuthorizationVerifier,
+  hashCampaignHolderProofAuthorizationRequestContextV1
+} from "./campaign-proof-authorization.mjs";
 
 export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
-export { verifySpendHolderControlV2 } from "./spend-holder-control.mjs";
+export {
+  hashCampaignHolderProofAuthorizationRequestContextV1,
+  verifySpendHolderControlV2
+};
 export {
   canonicalize,
   verifySpendAttestationToken,
@@ -254,6 +262,12 @@ export async function verifySpendZkProof(input) {
     replayRecorded
   });
 }
+
+export const verifyCampaignProofAuthorizationV1 =
+  createCampaignProofAuthorizationVerifier({
+    verifyAtomicProof: verifySpendZkProof,
+    verifyHolderControl: verifySpendHolderControlV2
+  });
 
 function validateProofShape(proof) {
   if (!isRecord(proof) || proof.schemaVersion !== 1) {
