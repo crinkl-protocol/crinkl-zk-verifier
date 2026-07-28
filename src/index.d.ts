@@ -22,6 +22,23 @@ export type VerificationReason =
   | "unsupported_cryptographic_backend"
   | "cryptographic_verification_failed";
 
+export type HolderControlReason =
+  | VerificationReason
+  | "holder_control_verified"
+  | "holder_control_unavailable"
+  | "malformed_holder_challenge"
+  | "malformed_holder_context"
+  | "malformed_holder_proof"
+  | "holder_context_mismatch"
+  | "holder_challenge_not_yet_valid"
+  | "holder_challenge_expired"
+  | "holder_challenge_store_required"
+  | "holder_challenge_replayed"
+  | "holder_commitment_mismatch"
+  | "holder_challenge_id_mismatch"
+  | "holder_proof_binding_mismatch"
+  | "holder_signature_invalid";
+
 export interface VerificationResult {
   ok: boolean;
   reason: VerificationReason;
@@ -123,17 +140,106 @@ export interface SpendTokenAdmissionResult {
   spendTokenHash?: string;
   headEventHash?: string;
   eventCount?: number;
+  schemaVersion?: 1 | 2;
   protocolVersion?: string;
   issuedBy?: string;
   publicKey?: string;
+  holderBinding?: {
+    scheme: "crinkl.holder.v2";
+    commitment: string;
+  };
 }
 
 export function canonicalize(value: unknown): string;
+export function verifySpendAttestationToken(input: {
+  token: Record<string, unknown>;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  supportedProtocolVersions?: string[];
+}): Promise<SpendTokenAdmissionResult>;
 export function verifySpendAttestationTokenV1(input: {
   token: Record<string, unknown>;
   issuerRegistry?: SpendTokenIssuerRegistry;
   supportedProtocolVersions?: string[];
 }): Promise<SpendTokenAdmissionResult>;
+export function verifySpendAttestationTokenV2(input: {
+  token: Record<string, unknown>;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  supportedProtocolVersions?: string[];
+}): Promise<SpendTokenAdmissionResult>;
+
+export type SpendHolderPurposeV2 =
+  | "TOKEN_PRESENTATION"
+  | "CAMPAIGN_PROOF_AUTHORIZATION"
+  | "CAMPAIGN_ACTION_AUTHORIZATION";
+
+export interface SpendHolderChallengeV2 {
+  domain: "crinkl.spend-holder-challenge.v2";
+  schemaVersion: 2;
+  nonceBase64: string;
+  spendTokenHash: string;
+  scopeId: string;
+  requestContextHash: string;
+  purpose: SpendHolderPurposeV2;
+  verifierId: string;
+  issuedAt: string;
+  expiresAt: string;
+}
+
+export interface SpendHolderControlProofV2 {
+  schemaVersion: 2;
+  scheme: "crinkl.holder.v2";
+  spendTokenHash: string;
+  scopeId: string;
+  challengeId: string;
+  holderPublicKeyBase64: string;
+  signatureBase64: string;
+}
+
+export interface SpendHolderExpectedContextV2 {
+  spendTokenHash: string;
+  scopeId: string;
+  requestContextHash: string;
+  purpose: SpendHolderPurposeV2;
+  verifierId: string;
+}
+
+export interface SpendHolderChallengeKeyV2 {
+  verifierId: string;
+  nonceBase64: string;
+}
+
+export interface SpendHolderChallengeStoreV2 {
+  isOutstanding(
+    input: SpendHolderChallengeKeyV2
+  ): Promise<boolean> | boolean;
+  consume(input: SpendHolderChallengeKeyV2): Promise<boolean> | boolean;
+}
+
+export interface SpendHolderControlResultV2 {
+  ok: boolean;
+  reason: HolderControlReason;
+  tokenAdmissionChecked?: boolean;
+  spendId?: string;
+  spendTokenHash?: string;
+  scopeId?: string;
+  requestContextHash?: string;
+  purpose?: SpendHolderPurposeV2;
+  verifierId?: string;
+  challengeId?: string;
+  challengeChecked?: boolean;
+  challengeConsumed?: boolean;
+}
+
+export function verifySpendHolderControlV2(input: {
+  token: Record<string, unknown>;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  supportedProtocolVersions?: string[];
+  challenge: SpendHolderChallengeV2;
+  holderProof: SpendHolderControlProofV2;
+  expectedContext: SpendHolderExpectedContextV2;
+  now?: Date | string | number;
+  challengeStore?: SpendHolderChallengeStoreV2;
+}): Promise<SpendHolderControlResultV2>;
 
 export interface Halo2CliBackendOptions {
   command?: string;

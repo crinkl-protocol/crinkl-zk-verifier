@@ -9,7 +9,9 @@ import { test } from "node:test";
 import {
   canonicalize,
   H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER,
+  verifySpendAttestationToken,
   verifySpendAttestationTokenV1,
+  verifySpendAttestationTokenV2,
   verifySpendZkProof
 } from "../src/index.mjs";
 
@@ -119,6 +121,62 @@ test("strict proof policy requires token admission, accepted head, and replay st
   assert.deepEqual(consumed, [[fixture.proof.scopeId, fixture.proof.nullifier]]);
 });
 
+test("strict proof policy admits a signed SpendAttestationTokenV2", async () => {
+  const fixture = makeStrictProofFixture({
+    schemaVersion: 2,
+    holderBinding: {
+      scheme: "crinkl.holder.v2",
+      commitment: hashId("holder-commitment")
+    }
+  });
+  const result = await verifySpendZkProof({
+    ...fixture,
+    verificationPolicy: strictPolicy(),
+    issuerRegistry: fixture.issuerRegistry,
+    headStore: { isAccepted: () => true },
+    seenNullifiers: {
+      has: () => false,
+      consume: () => true
+    },
+    backend: { verify: () => ({ ok: true }) }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.spendTokenAdmissionChecked, true);
+});
+
+test("generic token admission supports v1 and v2 while malformed v2 holder binding fails closed", async () => {
+  const v1Fixture = makeSignedToken();
+  const v2Fixture = makeSignedToken({
+    schemaVersion: 2,
+    holderBinding: {
+      scheme: "crinkl.holder.v2",
+      commitment: hashId("holder-commitment")
+    }
+  });
+
+  const v1 = await verifySpendAttestationToken({
+    token: v1Fixture.token,
+    issuerRegistry: v1Fixture.issuerRegistry
+  });
+  const v2 = await verifySpendAttestationTokenV2({
+    token: v2Fixture.token,
+    issuerRegistry: v2Fixture.issuerRegistry
+  });
+  v2Fixture.token.holderBinding.scheme = "unrecognized";
+  const malformed = await verifySpendAttestationTokenV2({
+    token: v2Fixture.token,
+    issuerRegistry: v2Fixture.issuerRegistry
+  });
+
+  assert.equal(v1.ok, true);
+  assert.equal(v1.schemaVersion, 1);
+  assert.equal(v2.ok, true);
+  assert.equal(v2.schemaVersion, 2);
+  assert.equal(malformed.ok, false);
+  assert.equal(malformed.reason, "malformed_spend_token");
+});
+
 test("strict proof policy rejects a valid token at an unaccepted head", async () => {
   const fixture = makeStrictProofFixture();
   const result = await verifySpendZkProof({
@@ -203,12 +261,15 @@ test("invalid strict-policy spelling fails closed instead of selecting legacy be
   assert.equal(result.reason, "invalid_verification_policy");
 });
 
-export function makeSignedToken() {
+export function makeSignedToken({
+  schemaVersion = 1,
+  holderBinding
+} = {}) {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
   const rawPublicKey = publicKey.export({ format: "der", type: "spki" }).subarray(-32);
   const unsignedToken = {
     tokenType: "SPEND_ATTESTATION",
-    schemaVersion: 1,
+    schemaVersion,
     spendId: "spend-signed-token-001",
     canonical: {
       status: "HARD_VERIFIED",
@@ -225,7 +286,8 @@ export function makeSignedToken() {
     },
     protocol: {
       protocolVersion: "1.0.0-rc.1"
-    }
+    },
+    ...(holderBinding === undefined ? {} : { holderBinding })
   };
   const tokenHash = createHash("sha256")
     .update(canonicalize(unsignedToken), "utf8")
@@ -251,8 +313,8 @@ export function makeSignedToken() {
   };
 }
 
-function makeStrictProofFixture() {
-  const signed = makeSignedToken();
+function makeStrictProofFixture(tokenOptions) {
+  const signed = makeSignedToken(tokenOptions);
   const spendTokenHash = `sha256:${signed.token.signatures.tokenHash}`;
   const statement = {
     domain: "crinkl:statement:v1",
