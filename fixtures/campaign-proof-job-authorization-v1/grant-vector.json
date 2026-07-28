@@ -1,0 +1,138 @@
+{
+  "kind": "campaign.proofJobAuthorizationGrant.v1",
+  "constants": {
+    "domain": "crinkl:campaign:proof-job-authorization-grant:v1",
+    "schemaVersion": 1,
+    "protocolVersion": "1.0.0-rc.1",
+    "hashRule": "SHA256_UTF8_RFC8785_CANONICAL_JSON",
+    "initialLifecycleState": "AUTHORIZED"
+  },
+  "valid": {
+    "grant": {
+      "domain": "crinkl:campaign:proof-job-authorization-grant:v1",
+      "schemaVersion": 1,
+      "protocolVersion": "1.0.0-rc.1",
+      "grantId": "proof-grant-vector-1",
+      "requestContextHash": "sha256:ef2a46006883ff58daee9652cb79d320ea29c9dba8f4411af1989f0ac32222d8",
+      "campaignId": "campaign.raposa.acquisition.001",
+      "campaignEpochRef": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "campaignPolicyPackageRef": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "scopeId": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "statementId": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "proofProfile": {
+        "proofSystem": "HALO2_IPA",
+        "circuitId": "H2_PROMO_V1",
+        "verifyingKeyId": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "inputManifestRef": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "recipientDisclosurePolicyRef": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "authorizedSpendInputs": [
+        {
+          "spendId": "spend-holder-vector-1",
+          "spendTokenHash": "sha256:57d90e95eb7816dfd69ec4af3c284105cbcc9c5e6fd70559f3d3830f8504c8dc",
+          "canonicalHeadEventHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "challengeId": "sha256:0af06e5de9b07f2094a50476e5197cfe436d6d8ed6b0f56c5b293c8b963dde22"
+        }
+      ],
+      "verifierId": "crinkl-verifier-vector-1",
+      "authorizedAt": "2026-07-28T00:02:00.000Z",
+      "expiresAt": "2026-07-28T00:15:00.000Z"
+    },
+    "expectedCanonical": "{\"authorizedAt\":\"2026-07-28T00:02:00.000Z\",\"authorizedSpendInputs\":[{\"canonicalHeadEventHash\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"challengeId\":\"sha256:0af06e5de9b07f2094a50476e5197cfe436d6d8ed6b0f56c5b293c8b963dde22\",\"spendId\":\"spend-holder-vector-1\",\"spendTokenHash\":\"sha256:57d90e95eb7816dfd69ec4af3c284105cbcc9c5e6fd70559f3d3830f8504c8dc\"}],\"campaignEpochRef\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"campaignId\":\"campaign.raposa.acquisition.001\",\"campaignPolicyPackageRef\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\",\"domain\":\"crinkl:campaign:proof-job-authorization-grant:v1\",\"expiresAt\":\"2026-07-28T00:15:00.000Z\",\"grantId\":\"proof-grant-vector-1\",\"inputManifestRef\":\"sha256:8888888888888888888888888888888888888888888888888888888888888888\",\"proofProfile\":{\"circuitId\":\"H2_PROMO_V1\",\"proofSystem\":\"HALO2_IPA\",\"verifyingKeyId\":\"sha256:7777777777777777777777777777777777777777777777777777777777777777\"},\"protocolVersion\":\"1.0.0-rc.1\",\"recipientDisclosurePolicyRef\":\"sha256:9999999999999999999999999999999999999999999999999999999999999999\",\"requestContextHash\":\"sha256:ef2a46006883ff58daee9652cb79d320ea29c9dba8f4411af1989f0ac32222d8\",\"schemaVersion\":1,\"scopeId\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"statementId\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\",\"verifierId\":\"crinkl-verifier-vector-1\"}",
+    "expectedGrantRef": "sha256:6184a7455b0da4c6f9e95efcc5282ac2674eb82961cd9655067561710ace51b7",
+    "expectedInitialLifecycleState": "AUTHORIZED",
+    "expectedDecision": {
+      "accepted": true,
+      "code": "campaign_proof_job_authorization_granted"
+    }
+  },
+  "negativeCases": [
+    {
+      "id": "changed-request-context",
+      "path": "requestContextHash",
+      "value": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-campaign",
+      "path": "campaignId",
+      "value": "campaign.sport-drink.acquisition.001",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-scope",
+      "path": "scopeId",
+      "value": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-circuit",
+      "path": "proofProfile.circuitId",
+      "value": "H2_OTHER_V1",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-manifest",
+      "path": "inputManifestRef",
+      "value": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-disclosure-policy",
+      "path": "recipientDisclosurePolicyRef",
+      "value": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-spend-token",
+      "path": "authorizedSpendInputs.0.spendTokenHash",
+      "value": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-head",
+      "path": "authorizedSpendInputs.0.canonicalHeadEventHash",
+      "value": "sha256:0101010101010101010101010101010101010101010101010101010101010101",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-challenge",
+      "path": "authorizedSpendInputs.0.challengeId",
+      "value": "sha256:0202020202020202020202020202020202020202020202020202020202020202",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "changed-expiry",
+      "path": "expiresAt",
+      "value": "2026-07-28T00:20:00.000Z",
+      "expectedDecision": { "accepted": false, "code": "grant_ref_mismatch" }
+    },
+    {
+      "id": "unknown-field",
+      "path": "unrestrictedHistoryAccess",
+      "value": true,
+      "expectedDecision": { "accepted": false, "code": "grant_shape_invalid" }
+    },
+    {
+      "id": "empty-spend-inputs",
+      "path": "authorizedSpendInputs",
+      "value": [],
+      "expectedDecision": { "accepted": false, "code": "grant_shape_invalid" }
+    },
+    {
+      "id": "duplicate-spend-token",
+      "mutation": "duplicate authorizedSpendInputs[0]",
+      "expectedDecision": { "accepted": false, "code": "grant_shape_invalid" }
+    },
+    {
+      "id": "expired-grant",
+      "verificationTime": "2026-07-28T00:15:00.000Z",
+      "expectedDecision": { "accepted": false, "code": "proof_job_authorization_expired" }
+    },
+    {
+      "id": "claim-race",
+      "initialLifecycleState": "CLAIMED",
+      "expectedDecision": { "accepted": false, "code": "proof_job_authorization_not_claimable" }
+    }
+  ]
+}
