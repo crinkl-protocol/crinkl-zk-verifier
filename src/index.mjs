@@ -3,7 +3,8 @@ import { verifySpendAttestationToken } from "./spend-token-admission.mjs";
 import { verifySpendHolderControlV2 } from "./spend-holder-control.mjs";
 import {
   createCampaignProofAuthorizationVerifier,
-  hashCampaignHolderProofAuthorizationRequestContextV1
+  hashCampaignHolderProofAuthorizationRequestContextV1,
+  hashCampaignHolderProofAuthorizationRequestContextV2
 } from "./campaign-proof-authorization.mjs";
 import {
   claimCampaignProofJobAuthorizationGrantV1,
@@ -22,6 +23,7 @@ export {
   createCampaignProofJobAuthorizer,
   hashCampaignProofJobAuthorizationGrantV1,
   hashCampaignHolderProofAuthorizationRequestContextV1,
+  hashCampaignHolderProofAuthorizationRequestContextV2,
   hashCampaignServerProvedCompletionPackageV1,
   verifyCampaignProofJobAuthorizationGrantV1,
   verifySpendHolderControlV2

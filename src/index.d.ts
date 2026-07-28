@@ -278,9 +278,37 @@ export interface CampaignHolderProofAuthorizationRequestContextV1 {
   authorizationExpiresAt: string;
 }
 
+export interface CampaignHolderProofAuthorizationRequestContextV2 {
+  domain: "crinkl:campaign:holder-proof-authorization-request-context:v2";
+  schemaVersion: 2;
+  protocolVersion: "1.0.0-rc.1";
+  campaignId: string;
+  campaignEpochRef: string;
+  campaignPolicyPackageRef: string;
+  conditionId: string;
+  conditionRequirementIds: string[];
+  sourceStatementIds: string[];
+  compiledStatementId: string;
+  statementEvaluationProfileRef: string;
+  proofProfileBindingRef: string;
+  evaluationContextHash: string;
+  proofProfile: {
+    proofSystem: string;
+    circuitId: string;
+    verifyingKeyId: string;
+  };
+  inputManifestRef: string;
+  recipientDisclosurePolicyRef: string;
+  authorizationExpiresAt: string;
+}
+
+export type CampaignHolderProofAuthorizationRequestContext =
+  | CampaignHolderProofAuthorizationRequestContextV1
+  | CampaignHolderProofAuthorizationRequestContextV2;
+
 export interface CampaignProofAuthorizationPackageV1 {
   schemaVersion: 1;
-  requestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  requestContext: CampaignHolderProofAuthorizationRequestContext;
   spendToken: Record<string, unknown>;
   holderChallenge: SpendHolderChallengeV2;
   holderProof: SpendHolderControlProofV2;
@@ -312,9 +340,13 @@ export function hashCampaignHolderProofAuthorizationRequestContextV1(
   requestContext: CampaignHolderProofAuthorizationRequestContextV1
 ): string;
 
+export function hashCampaignHolderProofAuthorizationRequestContextV2(
+  requestContext: CampaignHolderProofAuthorizationRequestContextV2
+): string;
+
 export function verifyCampaignProofAuthorizationV1(input: {
   package: CampaignProofAuthorizationPackageV1;
-  expectedRequestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  expectedRequestContext: CampaignHolderProofAuthorizationRequestContext;
   expectedScopeId: string;
   expectedVerifierId: string;
   authorizedInputManifest: Record<string, unknown>;
@@ -463,7 +495,7 @@ export function createCampaignProofJobAuthorizer(options?: {
   generateGrantId?(): string;
   maximumGrantLifetimeMs?: number;
 }): (input: {
-  requestContext: CampaignHolderProofAuthorizationRequestContextV1;
+  requestContext: CampaignHolderProofAuthorizationRequestContext;
   expectedScopeId: string;
   expectedVerifierId: string;
   authorizedInputManifest: Record<string, unknown>;

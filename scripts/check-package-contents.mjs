@@ -30,6 +30,8 @@ const EXPECTED_PACKAGE_FILES = Object.freeze([
 const REQUIRED_RUNTIME_EXPORTS = Object.freeze([
   "claimCampaignProofJobAuthorizationGrantV1",
   "createCampaignProofJobAuthorizer",
+  "hashCampaignHolderProofAuthorizationRequestContextV1",
+  "hashCampaignHolderProofAuthorizationRequestContextV2",
   "hashCampaignProofJobAuthorizationGrantV1",
   "hashCampaignServerProvedCompletionPackageV1",
   "verifyCampaignServerProvedCompletionV1"

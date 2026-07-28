@@ -8,6 +8,7 @@ import {
   claimCampaignProofJobAuthorizationGrantV1,
   createCampaignProofJobAuthorizer,
   hashCampaignHolderProofAuthorizationRequestContextV1,
+  hashCampaignHolderProofAuthorizationRequestContextV2,
   hashCampaignProofJobAuthorizationGrantV1,
   verifyCampaignProofJobAuthorizationGrantV1
 } from "../src/index.mjs";
@@ -226,6 +227,105 @@ test("authorizes the existing synthetic Spend v2 holder package before proving",
     "challenge-consumed",
     "grant-authorized"
   ]);
+});
+
+test("authorizes composite V2 lineage and copies only the compiled statement into the V1 grant", async () => {
+  const fixture = makeSyntheticV2Fixture();
+  let storedAuthorization;
+  const authorize = createCampaignProofJobAuthorizer({
+    generateGrantId: () => "proof-grant-composite-v2",
+    verifySpendToken() {
+      return fixture.admittedSpend;
+    },
+    verifyHolderControl() {
+      return {
+        ok: true,
+        reason: "holder_control_verified",
+        spendId: fixture.admittedSpend.spendId,
+        spendTokenHash: fixture.admittedSpend.spendTokenHash,
+        challengeId: fixture.challengeId,
+        challengeConsumed: true
+      };
+    }
+  });
+
+  const result = await authorize({
+    requestContext: fixture.requestContext,
+    expectedScopeId: fixture.scopeId,
+    expectedVerifierId: fixture.verifierId,
+    authorizedInputManifest: fixture.manifest,
+    holderAuthorizations: fixture.holderAuthorizations,
+    headStore: { isAccepted: () => true },
+    challengeStore: {
+      isOutstanding: () => true,
+      consume: () => true
+    },
+    grantStore: {
+      authorize(value) {
+        storedAuthorization = structuredClone(value);
+        return true;
+      }
+    },
+    now: "2026-07-28T00:02:00.000Z"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.grant.statementId, fixture.requestContext.compiledStatementId);
+  assert.equal(
+    result.grant.requestContextHash,
+    hashCampaignHolderProofAuthorizationRequestContextV2(
+      fixture.requestContext
+    )
+  );
+  assert.equal(
+    Object.hasOwn(result.grant, "conditionRequirementIds"),
+    false
+  );
+  assert.equal(
+    storedAuthorization.grantRef,
+    hashCampaignProofJobAuthorizationGrantV1(result.grant)
+  );
+});
+
+test("rejects unsorted composite manifest lineage before Spend or holder checks", async () => {
+  const fixture = makeSyntheticV2Fixture();
+  fixture.manifest.conditionRequirementIds.reverse();
+  fixture.requestContext.inputManifestRef = hashCanonical(fixture.manifest);
+  const requestContextHash =
+    hashCampaignHolderProofAuthorizationRequestContextV2(
+      fixture.requestContext
+    );
+  fixture.holderAuthorizations[0].holderChallenge.requestContextHash =
+    requestContextHash;
+  let externalCalls = 0;
+  const authorize = createCampaignProofJobAuthorizer({
+    verifySpendToken() {
+      externalCalls += 1;
+      return fixture.admittedSpend;
+    },
+    verifyHolderControl() {
+      externalCalls += 1;
+      return { ok: false };
+    }
+  });
+
+  const result = await authorize({
+    requestContext: fixture.requestContext,
+    expectedScopeId: fixture.scopeId,
+    expectedVerifierId: fixture.verifierId,
+    authorizedInputManifest: fixture.manifest,
+    holderAuthorizations: fixture.holderAuthorizations,
+    headStore: { isAccepted: () => true },
+    challengeStore: {
+      isOutstanding: () => true,
+      consume: () => true
+    },
+    grantStore: { authorize: () => true },
+    now: "2026-07-28T00:02:00.000Z"
+  });
+
+  assert.equal(result.reason, "malformed_authorized_input_manifest");
+  assert.equal(externalCalls, 0);
 });
 
 test("checks every accepted head before consuming any holder challenge", async () => {
@@ -524,6 +624,76 @@ test("does not emit a grant when atomic AUTHORIZED persistence loses a race", as
   ]);
   assert.equal(result.retryRule, "NEW_HOLDER_CHALLENGES_REQUIRED");
 });
+
+function makeSyntheticV2Fixture() {
+  const base = structuredClone(completedPackageFixture);
+  const manifest = base.authorizedInputManifest;
+  const sourceStatementId = manifest.statementId;
+  delete manifest.requirementId;
+  delete manifest.statementId;
+  manifest.domain =
+    "crinkl:buyer-state:statement-evaluation-input-manifest:v2";
+  manifest.schemaVersion = 2;
+  manifest.conditionRequirementIds = [
+    "minimum-amount",
+    "qualifying-merchant"
+  ];
+  manifest.sourceStatementIds = [
+    sourceStatementId,
+    "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  ].sort();
+  manifest.compiledStatementId = base.package.atomicProof.statementId;
+  manifest.proofProfileBindingRef =
+    "sha256:8888888888888888888888888888888888888888888888888888888888888888";
+
+  const requestContext = base.package.requestContext;
+  delete requestContext.requirementId;
+  delete requestContext.statementId;
+  requestContext.domain =
+    "crinkl:campaign:holder-proof-authorization-request-context:v2";
+  requestContext.schemaVersion = 2;
+  requestContext.conditionRequirementIds = [
+    ...manifest.conditionRequirementIds
+  ];
+  requestContext.sourceStatementIds = [...manifest.sourceStatementIds];
+  requestContext.compiledStatementId = manifest.compiledStatementId;
+  requestContext.proofProfileBindingRef = manifest.proofProfileBindingRef;
+  requestContext.inputManifestRef = hashCanonical(manifest);
+
+  const scopeId = manifest.relyingScopeRef;
+  const verifierId = base.package.holderChallenge.verifierId;
+  const requestContextHash =
+    hashCampaignHolderProofAuthorizationRequestContextV2(requestContext);
+  base.package.holderChallenge.requestContextHash = requestContextHash;
+  const challengeId = hashCanonical(base.package.holderChallenge);
+  const manifestInput = manifest.acceptedSpendInputs[0];
+  const admittedSpend = {
+    ok: true,
+    reason: "spend_token_verified",
+    spendId: manifestInput.spendId,
+    spendTokenHash: manifestInput.spendTokenHash,
+    headEventHash: normalizeHead(manifestInput.canonicalHeadEventHash),
+    eventCount: 1,
+    protocolVersion: requestContext.protocolVersion,
+    issuedBy: manifestInput.issuerId
+  };
+
+  return {
+    manifest,
+    requestContext,
+    scopeId,
+    verifierId,
+    challengeId,
+    admittedSpend,
+    holderAuthorizations: [
+      {
+        spendToken: base.package.spendToken,
+        holderChallenge: base.package.holderChallenge,
+        holderProof: base.package.holderProof
+      }
+    ]
+  };
+}
 
 function makeSyntheticMultiSpendFixture() {
   const base = structuredClone(completedPackageFixture);
