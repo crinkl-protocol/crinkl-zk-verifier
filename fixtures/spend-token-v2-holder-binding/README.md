@@ -10,6 +10,9 @@ The fixture tests independent verification of the adopted
 material only. They are not production credentials and make no production
 readiness or deployment claim.
 
+The independent verification implementation is exported from
+`src/spend-holder-control.mjs`.
+
 The copied vector must remain byte-identical to:
 
 `conformance/v2/vectors/token.spendAttestation.holderBinding.v2.json`
