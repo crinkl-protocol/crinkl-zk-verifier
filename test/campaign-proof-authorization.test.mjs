@@ -6,8 +6,12 @@ import { test } from "node:test";
 import {
   canonicalize,
   hashCampaignHolderProofAuthorizationRequestContextV1,
+  hashCampaignHolderProofAuthorizationRequestContextV2,
   verifyCampaignProofAuthorizationV1
 } from "../src/index.mjs";
+import {
+  createCampaignProofAuthorizationVerifier
+} from "../src/campaign-proof-authorization.mjs";
 
 const fixtureUrl = new URL(
   "../fixtures/campaign-proof-authorization-v1/package.json",
@@ -18,6 +22,15 @@ const proofManifestUrl = new URL(
   import.meta.url
 );
 const fixtureTemplate = JSON.parse(await readFile(fixtureUrl, "utf8"));
+const v2BindingVector = JSON.parse(
+  await readFile(
+    new URL(
+      "../fixtures/campaign-proof-authorization-v2/request-context-vector.json",
+      import.meta.url
+    ),
+    "utf8"
+  )
+);
 const proofArtifactManifest = JSON.parse(
   await readFile(proofManifestUrl, "utf8")
 );
@@ -40,6 +53,114 @@ test("freezes the adopted Campaign request-context hash without private witness 
     findForbiddenPrivateKeys(fixtureTemplate),
     []
   );
+});
+
+test("freezes the adopted composite V2 request context and manifest refs without weakening V1", () => {
+  assert.equal(
+    hashCanonical(v2BindingVector.inputManifest),
+    v2BindingVector.expectedInputManifestRef
+  );
+  assert.equal(
+    hashCampaignHolderProofAuthorizationRequestContextV2(
+      v2BindingVector.requestContext
+    ),
+    v2BindingVector.expectedRequestContextHash
+  );
+  assert.throws(() =>
+    hashCampaignHolderProofAuthorizationRequestContextV1(
+      v2BindingVector.requestContext
+    )
+  );
+  assert.throws(() =>
+    hashCampaignHolderProofAuthorizationRequestContextV2(
+      fixtureTemplate.package.requestContext
+    )
+  );
+});
+
+test("accepts a composite V2 package with compiled-statement and exact manifest lineage", async () => {
+  const fixture = makeV2Fixture();
+  const { events } = fixture;
+  const verifyV2 = createCampaignProofAuthorizationVerifier({
+    verifyAtomicProof({ proof }) {
+      events.push("proof");
+      assert.equal(
+        proof.statementId,
+        fixture.input.expectedRequestContext.compiledStatementId
+      );
+      return { ok: true };
+    },
+    verifyHolderControl({ expectedContext }) {
+      events.push("holder");
+      assert.equal(
+        expectedContext.requestContextHash,
+        fixture.requestContextHash
+      );
+      return { ok: true, challengeConsumed: true };
+    }
+  });
+
+  const result = await verifyV2(fixture.input);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.requestContextHash, fixture.requestContextHash);
+  assert.equal(
+    result.statementId,
+    fixture.input.expectedRequestContext.compiledStatementId
+  );
+  assert.deepEqual(events, ["proof", "holder", "nullifier"]);
+});
+
+test("rejects unsorted V2 requirement lineage before proof or holder verification", async () => {
+  const fixture = makeV2Fixture();
+  fixture.input.package.requestContext.conditionRequirementIds.reverse();
+  let externalCalls = 0;
+  const verifyV2 = createCampaignProofAuthorizationVerifier({
+    verifyAtomicProof() {
+      externalCalls += 1;
+      return { ok: true };
+    },
+    verifyHolderControl() {
+      externalCalls += 1;
+      return { ok: true, challengeConsumed: true };
+    }
+  });
+
+  const result = await verifyV2(fixture.input);
+
+  assert.equal(result.reason, "malformed_campaign_request_context");
+  assert.equal(externalCalls, 0);
+});
+
+test("rejects a V2 manifest whose valid source lineage differs from the request context", async () => {
+  const fixture = makeV2Fixture();
+  fixture.input.authorizedInputManifest.sourceStatementIds[0] =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+  const manifestRef = hashCanonical(fixture.input.authorizedInputManifest);
+  fixture.input.package.requestContext.inputManifestRef = manifestRef;
+  fixture.input.expectedRequestContext.inputManifestRef = manifestRef;
+  const requestContextHash =
+    hashCampaignHolderProofAuthorizationRequestContextV2(
+      fixture.input.expectedRequestContext
+    );
+  fixture.input.package.holderChallenge.requestContextHash =
+    requestContextHash;
+  let externalCalls = 0;
+  const verifyV2 = createCampaignProofAuthorizationVerifier({
+    verifyAtomicProof() {
+      externalCalls += 1;
+      return { ok: true };
+    },
+    verifyHolderControl() {
+      externalCalls += 1;
+      return { ok: true, challengeConsumed: true };
+    }
+  });
+
+  const result = await verifyV2(fixture.input);
+
+  assert.equal(result.reason, "authorized_input_manifest_mismatch");
+  assert.equal(externalCalls, 0);
 });
 
 test("accepts the complete package and consumes holder challenge before Campaign nullifier", async () => {
@@ -316,6 +437,73 @@ function makeFixture({
       supportedProtocolVersions: ["1.0.0-rc.1"],
       now: fixture.verificationTime
     }
+  };
+}
+
+function makeV2Fixture() {
+  const fixture = structuredClone(fixtureTemplate);
+  const manifest = fixture.authorizedInputManifest;
+  const sourceStatementId = manifest.statementId;
+  delete manifest.requirementId;
+  delete manifest.statementId;
+  manifest.domain =
+    "crinkl:buyer-state:statement-evaluation-input-manifest:v2";
+  manifest.schemaVersion = 2;
+  manifest.conditionRequirementIds = [
+    "minimum-amount",
+    "qualifying-merchant"
+  ];
+  manifest.sourceStatementIds = [
+    sourceStatementId,
+    "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  ].sort();
+  manifest.compiledStatementId = fixture.package.atomicProof.statementId;
+  manifest.proofProfileBindingRef =
+    "sha256:8888888888888888888888888888888888888888888888888888888888888888";
+
+  const requestContext = fixture.package.requestContext;
+  delete requestContext.requirementId;
+  delete requestContext.statementId;
+  requestContext.domain =
+    "crinkl:campaign:holder-proof-authorization-request-context:v2";
+  requestContext.schemaVersion = 2;
+  requestContext.conditionRequirementIds = [
+    ...manifest.conditionRequirementIds
+  ];
+  requestContext.sourceStatementIds = [...manifest.sourceStatementIds];
+  requestContext.compiledStatementId = manifest.compiledStatementId;
+  requestContext.proofProfileBindingRef = manifest.proofProfileBindingRef;
+  requestContext.inputManifestRef = hashCanonical(manifest);
+
+  const requestContextHash =
+    hashCampaignHolderProofAuthorizationRequestContextV2(requestContext);
+  fixture.package.holderChallenge.requestContextHash = requestContextHash;
+  const events = [];
+
+  return {
+    requestContextHash,
+    input: {
+      package: fixture.package,
+      expectedRequestContext: structuredClone(requestContext),
+      expectedScopeId: fixture.package.atomicProof.scopeId,
+      expectedVerifierId: fixture.package.holderChallenge.verifierId,
+      authorizedInputManifest: manifest,
+      proofArtifactManifest,
+      hashStatement: (statement) => hashCanonical(statement),
+      challengeStore: {
+        isOutstanding: () => true,
+        consume: () => true
+      },
+      campaignNullifierStore: {
+        has: () => false,
+        consume() {
+          events.push("nullifier");
+          return true;
+        }
+      },
+      now: fixture.verificationTime
+    },
+    events
   };
 }
 

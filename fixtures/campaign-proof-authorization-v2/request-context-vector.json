@@ -1,0 +1,78 @@
+{
+  "kind": "campaign.holderProofAuthorizationRequestContext.v2",
+  "inputManifest": {
+    "domain": "crinkl:buyer-state:statement-evaluation-input-manifest:v2",
+    "schemaVersion": 2,
+    "protocolVersion": "1.0.0-rc.1",
+    "conditionId": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "conditionRequirementIds": [
+      "minimum-amount",
+      "qualifying-merchant"
+    ],
+    "sourceStatementIds": [
+      "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    ],
+    "compiledStatementId": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "statementEvaluationProfileRef": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "proofProfileBindingRef": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "evaluationContextHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "evaluationCutoff": "2026-07-28T00:10:00.000Z",
+    "relyingScopeRef": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "acceptedSpendInputs": [
+      {
+        "spendStreamNamespaceRef": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issuerId": "issuer.example",
+        "spendId": "spend-atomic-vector-001",
+        "spendTokenHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "canonicalHeadEventHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "headSnapshotRef": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "headInclusionProofRef": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    ],
+    "sourceBindings": [
+      {
+        "sourceProfile": "MERCHANT_IDENTITY_REGISTRY_V1",
+        "sourceRef": "sha256:0101010101010101010101010101010101010101010101010101010101010101"
+      },
+      {
+        "sourceProfile": "SPEND_ISSUER_AND_CANONICAL_HEAD_SOURCES_V1",
+        "sourceRef": "sha256:0202020202020202020202020202020202020202020202020202020202020202"
+      }
+    ],
+    "sourceSelectionBindings": [],
+    "inputDisclosure": "NON_PORTABLE_AUTHORIZED_EVALUATION_BOUNDARY_ONLY",
+    "stableSubjectFields": "PROHIBITED"
+  },
+  "expectedInputManifestRef": "sha256:24c2276b46c0878f29be7e6691e6388bae261553fe158e7924816138e5f79848",
+  "requestContext": {
+    "domain": "crinkl:campaign:holder-proof-authorization-request-context:v2",
+    "schemaVersion": 2,
+    "protocolVersion": "1.0.0-rc.1",
+    "campaignId": "campaign.raposa.acquisition.001",
+    "campaignEpochRef": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "campaignPolicyPackageRef": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "conditionId": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "conditionRequirementIds": [
+      "minimum-amount",
+      "qualifying-merchant"
+    ],
+    "sourceStatementIds": [
+      "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    ],
+    "compiledStatementId": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "statementEvaluationProfileRef": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "proofProfileBindingRef": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "evaluationContextHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "proofProfile": {
+      "proofSystem": "HALO2_IPA",
+      "circuitId": "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+      "verifyingKeyId": "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74"
+    },
+    "inputManifestRef": "sha256:24c2276b46c0878f29be7e6691e6388bae261553fe158e7924816138e5f79848",
+    "recipientDisclosurePolicyRef": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+    "authorizationExpiresAt": "2026-07-28T00:15:00.000Z"
+  },
+  "expectedRequestContextHash": "sha256:0a34751881903335390b5ba815aebcbde875c4dd08f1b15fed37c7de1d835f86"
+}

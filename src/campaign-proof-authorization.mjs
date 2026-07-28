@@ -2,10 +2,14 @@ import { createHash } from "node:crypto";
 
 import { canonicalize } from "./spend-token-admission.mjs";
 
-const REQUEST_CONTEXT_DOMAIN =
+const REQUEST_CONTEXT_V1_DOMAIN =
   "crinkl:campaign:holder-proof-authorization-request-context:v1";
-const INPUT_MANIFEST_DOMAIN =
+const REQUEST_CONTEXT_V2_DOMAIN =
+  "crinkl:campaign:holder-proof-authorization-request-context:v2";
+const INPUT_MANIFEST_V1_DOMAIN =
   "crinkl:buyer-state:statement-evaluation-input-manifest:v1";
+const INPUT_MANIFEST_V2_DOMAIN =
+  "crinkl:buyer-state:statement-evaluation-input-manifest:v2";
 const PROTOCOL_VERSION = "1.0.0-rc.1";
 const HOLDER_PURPOSE = "CAMPAIGN_PROOF_AUTHORIZATION";
 const SHA256_ID_RE = /^sha256:[0-9a-f]{64}$/;
@@ -22,7 +26,7 @@ const PACKAGE_KEYS = Object.freeze([
   "holderProof",
   "atomicProof"
 ]);
-const REQUEST_CONTEXT_KEYS = Object.freeze([
+const REQUEST_CONTEXT_V1_KEYS = Object.freeze([
   "domain",
   "schemaVersion",
   "protocolVersion",
@@ -39,12 +43,31 @@ const REQUEST_CONTEXT_KEYS = Object.freeze([
   "recipientDisclosurePolicyRef",
   "authorizationExpiresAt"
 ]);
+const REQUEST_CONTEXT_V2_KEYS = Object.freeze([
+  "domain",
+  "schemaVersion",
+  "protocolVersion",
+  "campaignId",
+  "campaignEpochRef",
+  "campaignPolicyPackageRef",
+  "conditionId",
+  "conditionRequirementIds",
+  "sourceStatementIds",
+  "compiledStatementId",
+  "statementEvaluationProfileRef",
+  "proofProfileBindingRef",
+  "evaluationContextHash",
+  "proofProfile",
+  "inputManifestRef",
+  "recipientDisclosurePolicyRef",
+  "authorizationExpiresAt"
+]);
 const PROOF_PROFILE_KEYS = Object.freeze([
   "proofSystem",
   "circuitId",
   "verifyingKeyId"
 ]);
-const INPUT_MANIFEST_KEYS = Object.freeze([
+const INPUT_MANIFEST_V1_KEYS = Object.freeze([
   "domain",
   "schemaVersion",
   "protocolVersion",
@@ -52,6 +75,25 @@ const INPUT_MANIFEST_KEYS = Object.freeze([
   "requirementId",
   "statementId",
   "statementEvaluationProfileRef",
+  "evaluationContextHash",
+  "evaluationCutoff",
+  "relyingScopeRef",
+  "acceptedSpendInputs",
+  "sourceBindings",
+  "sourceSelectionBindings",
+  "inputDisclosure",
+  "stableSubjectFields"
+]);
+const INPUT_MANIFEST_V2_KEYS = Object.freeze([
+  "domain",
+  "schemaVersion",
+  "protocolVersion",
+  "conditionId",
+  "conditionRequirementIds",
+  "sourceStatementIds",
+  "compiledStatementId",
+  "statementEvaluationProfileRef",
+  "proofProfileBindingRef",
   "evaluationContextHash",
   "evaluationCutoff",
   "relyingScopeRef",
@@ -77,13 +119,40 @@ const SOURCE_SELECTION_KEYS = Object.freeze([
   "checkpointRef",
   "selectionRef"
 ]);
+const V2_SOURCE_PROFILES = new Set([
+  "CATEGORY_TAXONOMY_REGISTRY_V1",
+  "DECLARED_ENTITY_SET_REGISTRY_V1",
+  "EVIDENCE_COMPLETENESS_OR_NON_MEMBERSHIP_SOURCE",
+  "MARKET_REGISTRY_V1",
+  "MERCHANT_IDENTITY_REGISTRY_V1",
+  "POSITIVE_CAMPAIGN_PROVENANCE_SOURCES_V1",
+  "PRIVATE_PURCHASE_GROUPING_SOURCES_V1",
+  "PRODUCT_CATALOG_REGISTRY_V1",
+  "PURCHASE_LEVEL_PRODUCT_IDENTITY_SOURCE",
+  "SCOPED_SUBJECT_BINDING_SOURCES_V1",
+  "SPEND_ISSUER_AND_CANONICAL_HEAD_SOURCES_V1"
+]);
 
 export function hashCampaignHolderProofAuthorizationRequestContextV1(
   requestContext
 ) {
   const shape = validateRequestContext(requestContext);
-  if (!shape.ok) {
-    throw new TypeError(shape.reason);
+  if (!shape.ok || shape.version !== 1) {
+    throw new TypeError(
+      shape.reason ?? "campaign request context version mismatch"
+    );
+  }
+  return hashCanonical(requestContext);
+}
+
+export function hashCampaignHolderProofAuthorizationRequestContextV2(
+  requestContext
+) {
+  const shape = validateRequestContext(requestContext);
+  if (!shape.ok || shape.version !== 2) {
+    throw new TypeError(
+      shape.reason ?? "campaign request context version mismatch"
+    );
   }
   return hashCanonical(requestContext);
 }
@@ -181,7 +250,7 @@ export function createCampaignProofAuthorizationVerifier({
       expectedRequestContext.proofProfile.circuitId !== proof.circuitId ||
       expectedRequestContext.proofProfile.verifyingKeyId !==
         proof.verifyingKeyId ||
-      expectedRequestContext.statementId !== proof.statementId ||
+      expectedContextCheck.statementId !== proof.statementId ||
       expectedRequestContext.protocolVersion !== proof.protocolVersion ||
       proof.scopeId !== expectedScopeId ||
       challenge.scopeId !== expectedScopeId ||
@@ -360,10 +429,23 @@ export function createCampaignProofAuthorizationVerifier({
 }
 
 function validateRequestContext(value) {
+  if (!isRecord(value)) {
+    return { ok: false, reason: "malformed_campaign_request_context" };
+  }
+  if (value.schemaVersion === 1) {
+    return validateRequestContextV1(value);
+  }
+  if (value.schemaVersion === 2) {
+    return validateRequestContextV2(value);
+  }
+  return { ok: false, reason: "malformed_campaign_request_context" };
+}
+
+function validateRequestContextV1(value) {
   if (
-    !isExactRecord(value, REQUEST_CONTEXT_KEYS) ||
+    !isExactRecord(value, REQUEST_CONTEXT_V1_KEYS) ||
     !isExactRecord(value.proofProfile, PROOF_PROFILE_KEYS) ||
-    value.domain !== REQUEST_CONTEXT_DOMAIN ||
+    value.domain !== REQUEST_CONTEXT_V1_DOMAIN ||
     value.schemaVersion !== 1 ||
     value.protocolVersion !== PROTOCOL_VERSION ||
     !isIdentifier(value.campaignId) ||
@@ -392,7 +474,49 @@ function validateRequestContext(value) {
   if (!isSha256Id(value.proofProfile.verifyingKeyId)) {
     return { ok: false, reason: "malformed_campaign_request_context" };
   }
-  return { ok: true };
+  return { ok: true, version: 1, statementId: value.statementId };
+}
+
+function validateRequestContextV2(value) {
+  if (
+    !isExactRecord(value, REQUEST_CONTEXT_V2_KEYS) ||
+    !isExactRecord(value.proofProfile, PROOF_PROFILE_KEYS) ||
+    value.domain !== REQUEST_CONTEXT_V2_DOMAIN ||
+    value.schemaVersion !== 2 ||
+    value.protocolVersion !== PROTOCOL_VERSION ||
+    !isIdentifier(value.campaignId) ||
+    !isSortedUniqueIdentifiers(value.conditionRequirementIds, 2) ||
+    !isSortedUniqueSha256Ids(value.sourceStatementIds, 1) ||
+    !isIdentifier(value.proofProfile.proofSystem) ||
+    !isIdentifier(value.proofProfile.circuitId) ||
+    !isTimestamp(value.authorizationExpiresAt)
+  ) {
+    return { ok: false, reason: "malformed_campaign_request_context" };
+  }
+
+  for (const field of [
+    "campaignEpochRef",
+    "campaignPolicyPackageRef",
+    "conditionId",
+    "compiledStatementId",
+    "statementEvaluationProfileRef",
+    "proofProfileBindingRef",
+    "evaluationContextHash",
+    "inputManifestRef",
+    "recipientDisclosurePolicyRef"
+  ]) {
+    if (!isSha256Id(value[field])) {
+      return { ok: false, reason: "malformed_campaign_request_context" };
+    }
+  }
+  if (!isSha256Id(value.proofProfile.verifyingKeyId)) {
+    return { ok: false, reason: "malformed_campaign_request_context" };
+  }
+  return {
+    ok: true,
+    version: 2,
+    statementId: value.compiledStatementId
+  };
 }
 
 function verifyAuthorizedInputManifest({
@@ -402,37 +526,12 @@ function verifyAuthorizedInputManifest({
   spendToken,
   proof
 }) {
+  const contextShape = validateRequestContext(expectedRequestContext);
   if (
-    !isExactRecord(manifest, INPUT_MANIFEST_KEYS) ||
-    manifest.domain !== INPUT_MANIFEST_DOMAIN ||
-    manifest.schemaVersion !== 1 ||
-    manifest.protocolVersion !== PROTOCOL_VERSION ||
-    manifest.inputDisclosure !==
-      "NON_PORTABLE_AUTHORIZED_EVALUATION_BOUNDARY_ONLY" ||
-    manifest.stableSubjectFields !== "PROHIBITED" ||
-    !isTimestamp(manifest.evaluationCutoff) ||
-    !isSha256Id(manifest.relyingScopeRef) ||
-    !Array.isArray(manifest.acceptedSpendInputs) ||
-    manifest.acceptedSpendInputs.length !== 1 ||
-    !Array.isArray(manifest.sourceBindings) ||
-    manifest.sourceBindings.length === 0 ||
-    !Array.isArray(manifest.sourceSelectionBindings) ||
-    !manifest.sourceBindings.every(
-      (binding) =>
-        isExactRecord(binding, SOURCE_BINDING_KEYS) &&
-        isIdentifier(binding.sourceProfile) &&
-        isSha256Id(binding.sourceRef)
-    ) ||
-    !manifest.sourceSelectionBindings.every(
-      (binding) =>
-        isExactRecord(binding, SOURCE_SELECTION_KEYS) &&
-        isIdentifier(binding.sourceProfile) &&
-        isSha256Id(binding.requestRef) &&
-        isSha256Id(binding.checkpointRef) &&
-        isSha256Id(binding.selectionRef)
-    ) ||
-    hasCanonicalDuplicates(manifest.sourceBindings) ||
-    hasCanonicalDuplicates(manifest.sourceSelectionBindings)
+    !contextShape.ok ||
+    !validateInputManifestShape(manifest, contextShape.version, {
+      acceptedSpendCount: 1
+    })
   ) {
     return { ok: false, reason: "malformed_authorized_input_manifest" };
   }
@@ -443,11 +542,26 @@ function verifyAuthorizedInputManifest({
   } catch {
     return { ok: false, reason: "malformed_authorized_input_manifest" };
   }
+  const lineageMatches =
+    contextShape.version === 1
+      ? manifest.requirementId === expectedRequestContext.requirementId &&
+        manifest.statementId === expectedRequestContext.statementId
+      : arraysEqual(
+          manifest.conditionRequirementIds,
+          expectedRequestContext.conditionRequirementIds
+        ) &&
+        arraysEqual(
+          manifest.sourceStatementIds,
+          expectedRequestContext.sourceStatementIds
+        ) &&
+        manifest.compiledStatementId ===
+          expectedRequestContext.compiledStatementId &&
+        manifest.proofProfileBindingRef ===
+          expectedRequestContext.proofProfileBindingRef;
   if (
     inputManifestRef !== expectedRequestContext.inputManifestRef ||
     manifest.conditionId !== expectedRequestContext.conditionId ||
-    manifest.requirementId !== expectedRequestContext.requirementId ||
-    manifest.statementId !== expectedRequestContext.statementId ||
+    !lineageMatches ||
     manifest.statementEvaluationProfileRef !==
       expectedRequestContext.statementEvaluationProfileRef ||
     manifest.evaluationContextHash !==
@@ -480,10 +594,114 @@ function verifyAuthorizedInputManifest({
   return { ok: true };
 }
 
+function validateInputManifestShape(
+  manifest,
+  version,
+  { acceptedSpendCount }
+) {
+  const keys =
+    version === 1 ? INPUT_MANIFEST_V1_KEYS : INPUT_MANIFEST_V2_KEYS;
+  const domain =
+    version === 1 ? INPUT_MANIFEST_V1_DOMAIN : INPUT_MANIFEST_V2_DOMAIN;
+  if (
+    !isExactRecord(manifest, keys) ||
+    manifest.domain !== domain ||
+    manifest.schemaVersion !== version ||
+    manifest.protocolVersion !== PROTOCOL_VERSION ||
+    manifest.inputDisclosure !==
+      "NON_PORTABLE_AUTHORIZED_EVALUATION_BOUNDARY_ONLY" ||
+    manifest.stableSubjectFields !== "PROHIBITED" ||
+    !isTimestamp(manifest.evaluationCutoff) ||
+    !isSha256Id(manifest.relyingScopeRef) ||
+    !Array.isArray(manifest.acceptedSpendInputs) ||
+    manifest.acceptedSpendInputs.length !== acceptedSpendCount ||
+    !Array.isArray(manifest.sourceBindings) ||
+    manifest.sourceBindings.length === 0 ||
+    !Array.isArray(manifest.sourceSelectionBindings) ||
+    !manifest.sourceBindings.every(
+      (binding) =>
+        isExactRecord(binding, SOURCE_BINDING_KEYS) &&
+        isAcceptedSourceProfile(binding.sourceProfile, version) &&
+        isSha256Id(binding.sourceRef)
+    ) ||
+    !manifest.sourceSelectionBindings.every(
+      (binding) =>
+        isExactRecord(binding, SOURCE_SELECTION_KEYS) &&
+        isAcceptedSourceProfile(binding.sourceProfile, version) &&
+        isSha256Id(binding.requestRef) &&
+        isSha256Id(binding.checkpointRef) &&
+        isSha256Id(binding.selectionRef)
+    ) ||
+    hasCanonicalDuplicates(manifest.sourceBindings) ||
+    hasCanonicalDuplicates(manifest.sourceSelectionBindings)
+  ) {
+    return false;
+  }
+  if (version === 1) {
+    return (
+      isSha256Id(manifest.conditionId) &&
+      isIdentifier(manifest.requirementId) &&
+      isSha256Id(manifest.statementId) &&
+      isSha256Id(manifest.statementEvaluationProfileRef) &&
+      isSha256Id(manifest.evaluationContextHash)
+    );
+  }
+  return (
+    isSha256Id(manifest.conditionId) &&
+    isSortedUniqueIdentifiers(manifest.conditionRequirementIds, 2) &&
+    isSortedUniqueSha256Ids(manifest.sourceStatementIds, 1) &&
+    isSha256Id(manifest.compiledStatementId) &&
+    isSha256Id(manifest.statementEvaluationProfileRef) &&
+    isSha256Id(manifest.proofProfileBindingRef) &&
+    isSha256Id(manifest.evaluationContextHash)
+  );
+}
+
 function hashCanonical(value) {
   return `sha256:${createHash("sha256")
     .update(canonicalize(value), "utf8")
     .digest("hex")}`;
+}
+
+function arraysEqual(left, right) {
+  return (
+    Array.isArray(left) &&
+    Array.isArray(right) &&
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function isAcceptedSourceProfile(value, version) {
+  return (
+    isIdentifier(value) &&
+    (version === 1 || V2_SOURCE_PROFILES.has(value))
+  );
+}
+
+function isSortedUniqueIdentifiers(value, minimumLength) {
+  return isStrictlySortedUnique(
+    value,
+    minimumLength,
+    (item) => isIdentifier(item)
+  );
+}
+
+function isSortedUniqueSha256Ids(value, minimumLength) {
+  return isStrictlySortedUnique(
+    value,
+    minimumLength,
+    (item) => isSha256Id(item)
+  );
+}
+
+function isStrictlySortedUnique(value, minimumLength, validateItem) {
+  if (!Array.isArray(value) || value.length < minimumLength) return false;
+  for (let index = 0; index < value.length; index += 1) {
+    if (!validateItem(value[index])) return false;
+    if (index > 0 && value[index - 1] >= value[index]) return false;
+  }
+  return true;
 }
 
 function hasCanonicalDuplicates(values) {

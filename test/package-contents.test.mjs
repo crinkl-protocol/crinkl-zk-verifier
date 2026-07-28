@@ -15,6 +15,8 @@ test("installable package has one locked runtime and legal surface", async () =>
   assert.deepEqual(result.requiredRuntimeExports, [
     "claimCampaignProofJobAuthorizationGrantV1",
     "createCampaignProofJobAuthorizer",
+    "hashCampaignHolderProofAuthorizationRequestContextV1",
+    "hashCampaignHolderProofAuthorizationRequestContextV2",
     "hashCampaignProofJobAuthorizationGrantV1",
     "hashCampaignServerProvedCompletionPackageV1",
     "verifyCampaignServerProvedCompletionV1"
