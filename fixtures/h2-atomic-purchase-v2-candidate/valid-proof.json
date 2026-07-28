@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "1.0.0-rc.1",
+  "spendId": "spend-atomic-purchase-v2-public-fixture-001",
+  "spendTokenHash": "sha256:de7a2c21ab737b990323a0defca04ad10d0fe8519b83ab7d8baffccc3518dfb4",
+  "binding": {
+    "headEventHash": "sha256:ee84c5294cbca8825e80aca7e72f283455a38668d0676c86890331495f925711"
+  },
+  "statement": {
+    "domain": "crinkl:statement:v1",
+    "schemaVersion": 1,
+    "type": "PRIVATE_COMMERCE_ATOMIC_PURCHASE",
+    "protocolVersion": "1.0.0-rc.1",
+    "storeSetRoot": "poseidon:16c9f242ccb44157790a4a326f0c0f266f245cc1ef9946e796bfba3924e6f05f",
+    "minDayIndex": 20280,
+    "maxDayIndex": 20310,
+    "minimumAmountCents": 2000,
+    "currency": "USD"
+  },
+  "statementId": "sha256:1044255fef544a573ac3c5b36cb1571c943c2f91e2d5d80b7a0147551d086923",
+  "scopeId": "sha256:1016d427649965111f9e961361921252937e08bcead322fc5bbe5be97a1720c7",
+  "nullifier": "sha256:b9bae9e01eaf6c128cd9be2a7f8eb5b2c4ef6de8866d24b94e79ba5b0b4bde72",
+  "proofSystem": "HALO2_IPA",
+  "circuitId": "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+  "verifyingKeyId": "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74",
+  "publicInputs": {
+    "spendIdHash": "sha256:685cb65a7a9e1a30dcf581aa8edb1d7565745df21492af96f856ce9762024119",
+    "headEventHash": "sha256:ee84c5294cbca8825e80aca7e72f283455a38668d0676c86890331495f925711",
+    "spendTokenHash": "sha256:de7a2c21ab737b990323a0defca04ad10d0fe8519b83ab7d8baffccc3518dfb4",
+    "statementId": "sha256:1044255fef544a573ac3c5b36cb1571c943c2f91e2d5d80b7a0147551d086923",
+    "scopeId": "sha256:1016d427649965111f9e961361921252937e08bcead322fc5bbe5be97a1720c7",
+    "nullifier": "sha256:b9bae9e01eaf6c128cd9be2a7f8eb5b2c4ef6de8866d24b94e79ba5b0b4bde72",
+    "storeSetRoot": "poseidon:16c9f242ccb44157790a4a326f0c0f266f245cc1ef9946e796bfba3924e6f05f",
+    "minDayIndex": 20280,
+    "minimumAmountCents": 2000,
+    "commitmentStore": "poseidon:26fc0efcabdf9b87dc7189fd2114583ce4eb97789c83d9e8962f404682b3dc7a",
+    "commitmentDayIndex": "poseidon:34c1b9990eda52a8ad2c21b00c2783887750482f560d55c63e458a7c30c9eaf0",
+    "commitmentTotal": "poseidon:3a98d49a0fce1687d4d4a7f84d121ca5c924ec3dcb8542fa57f25cbd437409b8",
+    "maxDayIndex": 20310,
+    "expectedCurrencyCode": 5591876,
+    "commitmentCurrency": "poseidon:271bf790968cba00f36248aaae6f68130917ddf3e5f1ae6a85c47e1cc19dfc8b"
+  },
+  "proof": "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",
+  "issuedBy": "crinkl-proof-service-atomic-v2-candidate-fixture",
+  "createdAt": "2026-07-27T00:00:00.000Z",
+  "k": 14
+}

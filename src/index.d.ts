@@ -4,6 +4,7 @@ export type VerificationReason =
   | "malformed_proof_artifact"
   | "unsupported_protocol_version"
   | "spend_token_mismatch"
+  | "spend_token_commitment_mismatch"
   | "statement_id_mismatch"
   | "unknown_proof_system"
   | "unknown_circuit_id"
@@ -73,6 +74,7 @@ export interface VerifySpendZkProofInput {
 }
 
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER: readonly string[];
+export const H2_ATOMIC_PURCHASE_V2_CANDIDATE_PUBLIC_INPUT_ORDER: readonly string[];
 
 export function verifySpendZkProof(input: VerifySpendZkProofInput): Promise<VerificationResult>;
 
