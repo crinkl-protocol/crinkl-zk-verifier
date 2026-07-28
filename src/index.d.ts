@@ -476,6 +476,108 @@ export function createCampaignProofJobAuthorizer(options?: {
   now?: Date | string | number;
 }) => Promise<CampaignProofJobAuthorizationResultV1>;
 
+export interface CampaignServerProvedCompletionPackageV1 {
+  domain: "crinkl:campaign:server-proved-completion-package:v1";
+  schemaVersion: 1;
+  protocolVersion: "1.0.0-rc.1";
+  grantRef: string;
+  proofArtifactRef: string;
+  proverId: string;
+  completedAt: string;
+}
+
+export type CampaignServerProvedCompletionReason =
+  | VerificationReason
+  | "campaign_server_proved_completion_verified"
+  | "completion_package_shape_invalid"
+  | "completion_ref_invalid"
+  | "completion_ref_mismatch"
+  | "grant_shape_invalid"
+  | "grant_ref_mismatch"
+  | "proof_job_lifecycle_store_required"
+  | "proof_job_authorization_not_claimed"
+  | "proof_job_claimed_by_other_prover"
+  | "prover_registry_required"
+  | "prover_not_authorized"
+  | "proof_job_authorization_expired"
+  | "proof_artifact_shape_invalid"
+  | "proof_artifact_ref_mismatch"
+  | "proof_job_lineage_mismatch"
+  | "proof_job_time_mismatch"
+  | "campaign_proof_verifier_failed"
+  | "campaign_nullifier_consumption_failed"
+  | "campaign_completion_terminalization_failed"
+  | "proof_job_failure_terminalization_failed";
+
+export interface CampaignProofJobLifecycleStoreV1 {
+  get(input: {
+    grantRef: string;
+  }): Promise<{
+    state: string;
+    claimedBy?: string;
+    claimedAt?: string;
+  } | null> | {
+    state: string;
+    claimedBy?: string;
+    claimedAt?: string;
+  } | null;
+  transition(input: {
+    grantRef: string;
+    expectedState: "CLAIMED";
+    nextState: "COMPLETED" | "FAILED";
+    reason: string;
+  }): Promise<boolean> | boolean;
+}
+
+export interface CampaignProverRegistryV1 {
+  isAuthorized(input: {
+    proverId: string;
+    grantRef: string;
+    claimedAt: string;
+    completedAt: string;
+  }): Promise<boolean> | boolean;
+}
+
+export interface CampaignServerProvedCompletionResultV1 {
+  ok: boolean;
+  reason: CampaignServerProvedCompletionReason;
+  completionRef?: string;
+  grantRef?: string;
+  proofArtifactRef?: string;
+  campaignId?: string;
+  statementId?: string;
+  scopeId?: string;
+  nullifier?: string;
+  proofChecked?: boolean;
+  campaignNullifierChecked?: boolean;
+  campaignNullifierConsumed?: boolean;
+  grantLifecycleState?: "CLAIMED" | "COMPLETED" | "FAILED";
+  holderChallengeOperations?: 0;
+  partialConsumption?: boolean;
+  reconciliationRequired?: boolean;
+  failedReason?: string;
+}
+
+export function hashCampaignServerProvedCompletionPackageV1(
+  completionPackage: CampaignServerProvedCompletionPackageV1
+): string;
+
+export function verifyCampaignServerProvedCompletionV1(input: {
+  package: CampaignServerProvedCompletionPackageV1;
+  expectedCompletionRef: string;
+  grant: CampaignProofJobAuthorizationGrantV1;
+  proofArtifact: Record<string, unknown>;
+  spendTokens: Record<string, unknown>[];
+  proofArtifactManifest: VerifierRegistryManifestV1;
+  hashStatement(statement: unknown): string;
+  backend?: VerificationBackend;
+  issuerRegistry?: SpendTokenIssuerRegistry;
+  headStore?: SpendTokenHeadStore;
+  proverRegistry?: CampaignProverRegistryV1;
+  grantLifecycleStore?: CampaignProofJobLifecycleStoreV1;
+  campaignNullifierStore?: NullifierReplayStore;
+}): Promise<CampaignServerProvedCompletionResultV1>;
+
 export interface Halo2CliBackendOptions {
   command?: string;
   argsPrefix?: string[];

@@ -1,0 +1,53 @@
+{
+  "kind": "campaign.serverProvedCompletion.verifierFixture.v1",
+  "protocolSource": "crinkl-protocol@fa86432a507a75d40b99c131eff3671c57e79d02:conformance/v2/vectors/campaign.serverProvedCompletion.v1.json",
+  "productionZk": false,
+  "cryptographicBackendEvidence": "INJECTED_ACCEPTANCE_STUB",
+  "grant": {
+    "domain": "crinkl:campaign:proof-job-authorization-grant:v1",
+    "schemaVersion": 1,
+    "protocolVersion": "1.0.0-rc.1",
+    "grantId": "proof-grant-completion-vector-1",
+    "requestContextHash": "sha256:16d03b3ceae491d4812f82e44287bcc45618679229d002031f4f6ee722063977",
+    "campaignId": "campaign.raposa.acquisition.001",
+    "campaignEpochRef": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "campaignPolicyPackageRef": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "scopeId": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "statementId": "sha256:1044255fef544a573ac3c5b36cb1571c943c2f91e2d5d80b7a0147551d086923",
+    "proofProfile": {
+      "proofSystem": "HALO2_IPA",
+      "circuitId": "H2_ATOMIC_PURCHASE_V2_CANDIDATE",
+      "verifyingKeyId": "sha256:b01da9b079abf9063d7b5b096c57dc715be2fa7323f8dc0df79ac7605ed65f74"
+    },
+    "inputManifestRef": "sha256:8949db0c5742a1b64250fcbd452b99419db8ecddd367146c06abe5f29e1038a8",
+    "recipientDisclosurePolicyRef": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "authorizedSpendInputs": [
+      {
+        "spendId": "spend-holder-vector-1",
+        "spendTokenHash": "sha256:7cdb73b0a3e983543007ad79a2be1f3210e4cad52dc33edaa0351009b78d713a",
+        "canonicalHeadEventHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "challengeId": "sha256:fa90799fea1e9244402d3a2745a531ad674eaa00f8f40276865868d91d7b40f2"
+      }
+    ],
+    "verifierId": "crinkl-verifier-vector-1",
+    "authorizedAt": "2026-07-28T00:02:00.000Z",
+    "expiresAt": "2026-07-28T00:15:00.000Z"
+  },
+  "expectedGrantRef": "sha256:ebb79c4ec68330594879f32ec3713b0952a7ad233598d0aa9ace8b52dd25ebcd",
+  "grantLifecycle": {
+    "state": "CLAIMED",
+    "claimedBy": "crinkl-proof-service-vector-1",
+    "claimedAt": "2026-07-28T00:03:00.000Z"
+  },
+  "package": {
+    "domain": "crinkl:campaign:server-proved-completion-package:v1",
+    "schemaVersion": 1,
+    "protocolVersion": "1.0.0-rc.1",
+    "grantRef": "sha256:ebb79c4ec68330594879f32ec3713b0952a7ad233598d0aa9ace8b52dd25ebcd",
+    "proofArtifactRef": "sha256:55b302e38d44c7d4a211fa4be3379a85c393f7a14ace682a97797417b544112b",
+    "proverId": "crinkl-proof-service-vector-1",
+    "completedAt": "2026-07-28T00:04:00.000Z"
+  },
+  "expectedProofArtifactRef": "sha256:55b302e38d44c7d4a211fa4be3379a85c393f7a14ace682a97797417b544112b",
+  "expectedCompletionRef": "sha256:d6cdcf8684e14b2720e983abe638bd821d56c66f791fd8443eed991dec8a4d42"
+}
