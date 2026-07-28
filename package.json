@@ -14,8 +14,9 @@
   },
   "scripts": {
     "test": "npm run test:preproduction",
-    "test:preproduction": "node --test test/index.test.mjs test/fixtures.test.mjs test/campaign-proof-authorization.test.mjs",
+    "test:preproduction": "node --test test/index.test.mjs test/fixtures.test.mjs test/campaign-proof-authorization.test.mjs test/campaign-server-proved-completion.test.mjs",
     "test:campaign-authorization": "node --test test/campaign-proof-authorization.test.mjs",
+    "test:campaign-completion": "node --test test/campaign-server-proved-completion.test.mjs",
     "test:halo2": "node --test test/halo2-cli-backend.test.mjs",
     "test:real-atomic": "node --test test/atomic-purchase-v2-real-fixture.test.mjs",
     "generate:fixtures": "node scripts/generate-h2-promo-open-min-fixture.mjs",

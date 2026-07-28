@@ -11,6 +11,10 @@ import {
   hashCampaignProofJobAuthorizationGrantV1,
   verifyCampaignProofJobAuthorizationGrantV1
 } from "./campaign-proof-job-authorization.mjs";
+import {
+  createCampaignServerProvedCompletionVerifier,
+  hashCampaignServerProvedCompletionPackageV1
+} from "./campaign-server-proved-completion.mjs";
 
 export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
 export {
@@ -18,6 +22,7 @@ export {
   createCampaignProofJobAuthorizer,
   hashCampaignProofJobAuthorizationGrantV1,
   hashCampaignHolderProofAuthorizationRequestContextV1,
+  hashCampaignServerProvedCompletionPackageV1,
   verifyCampaignProofJobAuthorizationGrantV1,
   verifySpendHolderControlV2
 };
@@ -277,6 +282,11 @@ export const verifyCampaignProofAuthorizationV1 =
   createCampaignProofAuthorizationVerifier({
     verifyAtomicProof: verifySpendZkProof,
     verifyHolderControl: verifySpendHolderControlV2
+  });
+
+export const verifyCampaignServerProvedCompletionV1 =
+  createCampaignServerProvedCompletionVerifier({
+    verifyProof: verifySpendZkProof
   });
 
 function validateProofShape(proof) {
