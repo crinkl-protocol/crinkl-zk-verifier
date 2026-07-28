@@ -1,7 +1,7 @@
 {
   "name": "@crnkl/zk-verifier",
   "version": "0.1.0-alpha.0",
-  "description": "Fail-closed Crinkl ZK spend proof verifier package scaffold.",
+  "description": "Fail-closed independent verifier for Crinkl Spend proofs and Campaign proof jobs.",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./src/index.mjs",
@@ -12,11 +12,22 @@
       "import": "./src/index.mjs"
     }
   },
+  "files": [
+    "src",
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "npm run test:preproduction",
-    "test:preproduction": "node --test test/index.test.mjs test/fixtures.test.mjs test/campaign-proof-authorization.test.mjs test/campaign-server-proved-completion.test.mjs",
+    "test:preproduction": "node --test test/index.test.mjs test/fixtures.test.mjs test/campaign-proof-authorization.test.mjs test/campaign-proof-job-authorization.test.mjs test/campaign-server-proved-completion.test.mjs test/package-contents.test.mjs",
     "test:campaign-authorization": "node --test test/campaign-proof-authorization.test.mjs",
     "test:campaign-completion": "node --test test/campaign-server-proved-completion.test.mjs",
+    "test:package": "node --test test/package-contents.test.mjs",
+    "check:package": "node scripts/check-package-contents.mjs",
+    "release:check": "npm run test:preproduction && npm run verify:release-binary",
+    "prepublishOnly": "npm run release:check",
     "test:halo2": "node --test test/halo2-cli-backend.test.mjs",
     "test:real-atomic": "node --test test/atomic-purchase-v2-real-fixture.test.mjs",
     "generate:fixtures": "node scripts/generate-h2-promo-open-min-fixture.mjs",
