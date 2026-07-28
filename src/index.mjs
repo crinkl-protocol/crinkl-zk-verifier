@@ -1,10 +1,13 @@
 import { createHash } from "node:crypto";
-import { verifySpendAttestationTokenV1 } from "./spend-token-admission.mjs";
+import { verifySpendAttestationToken } from "./spend-token-admission.mjs";
 
 export { createHalo2CliBackend } from "./halo2-cli-backend.mjs";
+export { verifySpendHolderControlV2 } from "./spend-holder-control.mjs";
 export {
   canonicalize,
-  verifySpendAttestationTokenV1
+  verifySpendAttestationToken,
+  verifySpendAttestationTokenV1,
+  verifySpendAttestationTokenV2
 } from "./spend-token-admission.mjs";
 
 export const H2_PROMO_OPEN_MIN_V1_PUBLIC_INPUT_ORDER = Object.freeze([
@@ -138,7 +141,7 @@ export async function verifySpendZkProof(input) {
   let spendTokenAdmissionChecked = false;
   let headAcceptanceChecked = false;
   if (policy.spendTokenAdmission === "required") {
-    const admission = await verifySpendAttestationTokenV1({
+    const admission = await verifySpendAttestationToken({
       token: spendToken,
       issuerRegistry,
       supportedProtocolVersions: [proof.protocolVersion]

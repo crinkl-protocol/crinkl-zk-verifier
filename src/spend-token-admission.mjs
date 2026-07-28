@@ -5,13 +5,26 @@ import {
 } from "node:crypto";
 
 const RAW_SHA256_RE = /^[0-9a-f]{64}$/;
+const SHA256_ID_RE = /^sha256:[0-9a-f]{64}$/;
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
-export async function verifySpendAttestationTokenV1({
+export async function verifySpendAttestationToken(input = {}) {
+  return verifySpendAttestationTokenVersion(input, new Set([1, 2]));
+}
+
+export async function verifySpendAttestationTokenV1(input = {}) {
+  return verifySpendAttestationTokenVersion(input, new Set([1]));
+}
+
+export async function verifySpendAttestationTokenV2(input = {}) {
+  return verifySpendAttestationTokenVersion(input, new Set([2]));
+}
+
+async function verifySpendAttestationTokenVersion({
   token,
   issuerRegistry,
   supportedProtocolVersions
-} = {}) {
+} = {}, acceptedSchemaVersions) {
   if (!isRecord(token) || !isRecord(token.signatures)) {
     return rejected("malformed_spend_token");
   }
@@ -19,7 +32,7 @@ export async function verifySpendAttestationTokenV1({
   const { signatures, ...unsignedToken } = token;
   if (
     token.tokenType !== "SPEND_ATTESTATION" ||
-    token.schemaVersion !== 1 ||
+    !acceptedSchemaVersions.has(token.schemaVersion) ||
     !isNonEmptyString(token.spendId) ||
     !isRecord(token.canonical) ||
     !isRecord(token.lineage) ||
@@ -32,6 +45,13 @@ export async function verifySpendAttestationTokenV1({
     !isBase64OfLength(signatures.publicKey, 32) ||
     !RAW_SHA256_RE.test(signatures.tokenHash ?? "") ||
     !isBase64OfLength(signatures.signature, 64)
+  ) {
+    return rejected("malformed_spend_token");
+  }
+  if (
+    token.schemaVersion === 2 &&
+    token.holderBinding !== undefined &&
+    !isValidHolderBinding(token.holderBinding)
   ) {
     return rejected("malformed_spend_token");
   }
@@ -104,9 +124,13 @@ export async function verifySpendAttestationTokenV1({
     spendTokenHash: `sha256:${computedTokenHash}`,
     headEventHash: normalizeSha256Id(token.lineage.headEventHash),
     eventCount: token.lineage.eventCount,
+    schemaVersion: token.schemaVersion,
     protocolVersion: token.protocol.protocolVersion,
     issuedBy: signatures.issuedBy,
-    publicKey: signatures.publicKey
+    publicKey: signatures.publicKey,
+    ...(token.schemaVersion === 2 && token.holderBinding !== undefined
+      ? { holderBinding: { ...token.holderBinding } }
+      : {})
   };
 }
 
@@ -133,9 +157,18 @@ export function canonicalize(value) {
 
 function normalizeSha256Id(value) {
   if (RAW_SHA256_RE.test(value ?? "")) return `sha256:${value}`;
-  return typeof value === "string" && /^sha256:[0-9a-f]{64}$/.test(value)
+  return typeof value === "string" && SHA256_ID_RE.test(value)
     ? value
     : null;
+}
+
+function isValidHolderBinding(value) {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 2 &&
+    value.scheme === "crinkl.holder.v2" &&
+    SHA256_ID_RE.test(value.commitment ?? "")
+  );
 }
 
 function isHashLike(value) {
